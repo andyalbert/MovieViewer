@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Movies viewer</string>
+    <string name="image_url">http://image.tmdb.org/t/p/w185/</string>
+    <string name="movie_data">data</string>
+    <string name="no_internet_message">please check your internet connection</string>
+    <string name="top_rated">top_rated</string>
+    <string name="popular">popular</string>
+    <string name="movie_db_key">add it here</string>
+</resources>
