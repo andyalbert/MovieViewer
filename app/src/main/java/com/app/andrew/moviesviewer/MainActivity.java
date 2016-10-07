@@ -21,7 +21,8 @@ public class MainActivity extends AppCompatActivity {
         //bar.setDisplayUseLogoEnabled(true);
 
         setImageDimentions();
-        getFragmentManager().beginTransaction().replace(R.id.activity_main, new MainFragment()).commit();
+        if(savedInstanceState == null)
+            getFragmentManager().beginTransaction().replace(R.id.activity_main, new MainFragment()).commit();
     }
 
     public void setImageDimentions(){

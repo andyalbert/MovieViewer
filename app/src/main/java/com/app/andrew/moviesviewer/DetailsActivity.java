@@ -17,7 +17,7 @@ public class DetailsActivity extends AppCompatActivity {
         bundle.putParcelable(getString(R.string.movie_data), movie);
         DetailsFragment fragment = new DetailsFragment();
         fragment.setArguments(bundle);
-
-        getFragmentManager().beginTransaction().replace(R.id.details_activity, fragment).commit();
+        if(savedInstanceState == null)
+            getFragmentManager().beginTransaction().replace(R.id.details_activity, fragment).commit();
     }
 }
