@@ -1,4 +1,4 @@
-package utilities;
+package com.app.andrew.moviesviewer.utilities;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

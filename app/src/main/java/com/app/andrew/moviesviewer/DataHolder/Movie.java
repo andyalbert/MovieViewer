@@ -1,20 +1,32 @@
-package com.app.andrew.moviesviewer;
+package com.app.andrew.moviesviewer.DataHolder;
 
 import android.app.ApplicationErrorReport;
 import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+
 /**
  * Created by andrew on 10/5/16.
  */
 
-public class Movie implements Parcelable{
+public class Movie implements /*Parcelable, */Serializable{
     private String url;
     private String title;
     private double rating;
     private String date;
     private String overview;
+    private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getOverview() {
         return overview;
@@ -66,7 +78,7 @@ public class Movie implements Parcelable{
         this.url = url;
     }
 
-    @Override
+/*    @Override
     public int describeContents() {
         return 0;
     }
@@ -91,5 +103,5 @@ public class Movie implements Parcelable{
         public Movie[] newArray(int i) {
             return new Movie[i];
         }
-    };
+    };*/
 }
