@@ -6,12 +6,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -36,6 +38,7 @@ import com.app.andrew.moviesviewer.DataHolder.Movie;
 import com.app.andrew.moviesviewer.DataHolder.Review;
 import com.app.andrew.moviesviewer.DataHolder.Trailer;
 import com.app.andrew.moviesviewer.utilities.ImageConverter;
+import com.app.andrew.moviesviewer.utilities.NetworkConnection;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -71,18 +74,21 @@ public class DetailsFragment extends Fragment {
     private View reviewSeparator;
     private TextView trailersHeader;
     private View trailersSeparator;
-    private DataBaseManagementTask dataBaseManagementTask;
+    private InsertIntoDataBaseTask insertIntoDataBaseTask;
     private boolean currentState;
     private boolean originalState; // used to detect whether to change the db state or not
     private SharedPreferences preferences;
     private Activity activity;
     private DownloadImageTask downloadImageTask;
-    //    private Bitmap poster;
+    private boolean isFavourite;
+    private ReflectLocalData localData;
+    private View view;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         movie = (Movie) getArguments().getSerializable(getString(R.string.movie_data));
+        isFavourite = getArguments().getBoolean(getString(R.string.is_favourite_key));
         setHasOptionsMenu(true);
         preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
     }
@@ -109,12 +115,12 @@ public class DetailsFragment extends Fragment {
                 if (preferences.getBoolean(movie.getId(), false)) { //movie is favourite, remove it
                     item.setIcon(R.mipmap.ic_not_favourite);
                     editor.remove(movie.getId());
-                    editor.apply();
+                    editor.commit(); //todo (or commit ? )
                     currentState = false;
                 } else {
                     item.setIcon(R.mipmap.ic_favourite);
                     editor.putBoolean(movie.getId(), true);
-                    editor.apply();
+                    editor.commit();
                     currentState = true;
                 }
                 return true;
@@ -129,8 +135,8 @@ public class DetailsFragment extends Fragment {
     public void onStop() {
         super.onStop();
         if(currentState != originalState){
-            dataBaseManagementTask = new DataBaseManagementTask();
-            dataBaseManagementTask.execute(currentState);
+            insertIntoDataBaseTask = new InsertIntoDataBaseTask();
+            insertIntoDataBaseTask.execute(currentState);
             originalState = currentState;
         }
         Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
@@ -146,11 +152,14 @@ public class DetailsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.details_fragment, container);
-        imageView = (ImageView) view.findViewById(R.id.movie_image);
-        downloadImageTask = new DownloadImageTask();
-        downloadImageTask.execute(movie.getUrl());
+        this.view = view;
 
-        originalState = false;
+        //finding views
+        imageView = (ImageView) view.findViewById(R.id.movie_image);
+        titleText = (TextView) view.findViewById(R.id.movie_title_text);
+        overviewText = (TextView) view.findViewById(R.id.overview_text);
+        releaseDataText = (TextView) view.findViewById(R.id.release_date);
+        ratingBar = (RatingBar) view.findViewById(R.id.movie_rating);
         recyclerView = (RecyclerView) view.findViewById(R.id.reviews_recycler_view);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(mLayoutManager);
@@ -160,25 +169,27 @@ public class DetailsFragment extends Fragment {
         reviewHeader = (TextView) view.findViewById(R.id.review_header);
         trailersHeader = (TextView) view.findViewById(R.id.trailers_header);
         trailersSeparator = view.findViewById(R.id.trailers_separator);
-        ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
-        reviewsAndTrailersTask.execute(movie.getId());
 
-
-        titleText = (TextView) view.findViewById(R.id.movie_title_text);
-        overviewText = (TextView) view.findViewById(R.id.overview_text);
-        releaseDataText = (TextView) view.findViewById(R.id.release_date);
-        ratingBar = (RatingBar) view.findViewById(R.id.movie_rating);
-
-
-
+        //setting views values
         ratingBar.setRating((float) (movie.getRating() / 2));
         releaseDataText.setText(movie.getDate());
         titleText.setText(movie.getTitle());
         overviewText.setText(movie.getOverview());
 
-//        imageView.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
-        //       imageView.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
-        //Picasso.with(getActivity()).load(movie.getUrl()).into(imageView); //todo is this right ? i replaced it with imagemap
+        if(!isFavourite){
+            downloadImageTask = new DownloadImageTask();
+            downloadImageTask.execute(movie.getUrl());
+
+            ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
+            reviewsAndTrailersTask.execute(movie.getId());
+            //imageView.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
+            //imageView.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
+            //Picasso.with(getActivity()).load(movie.getUrl()).into(imageView); //todo is this right ? i replaced it with imagemap
+        } else {
+            imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
+            localData = new ReflectLocalData();
+            localData.execute();
+        }
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
@@ -188,36 +199,11 @@ public class DetailsFragment extends Fragment {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             if (reviews.size() > 0) {
-                reviewSeparator.setVisibility(View.VISIBLE);
-                reviewHeader.setVisibility(View.VISIBLE);
-                reviewsAdapter = new ReviewsAdapter(reviews);
-                recyclerView.setAdapter(reviewsAdapter);
-                recyclerView.setNestedScrollingEnabled(false);
-                recyclerView.setVisibility(View.VISIBLE);
+                setReviews();
             }
             if (trailers.size() > 0) {
-                trailersHeader.setVisibility(View.VISIBLE);
-                trailersSeparator.setVisibility(View.VISIBLE);
-                trailersViewAdapter = new TrailersViewAdapter(getActivity(), R.id.trailers_gridview, trailers);
-                trailersGridView.setAdapter(trailersViewAdapter);
-                trailersGridView.setVisibility(View.VISIBLE);
-                trailersGridView.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        v.getParent().requestDisallowInterceptTouchEvent(true);
-                        return false;
-                    }
-
-                });
-                trailersGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setData(Uri.parse(getString(R.string.youtube_link) + trailers.get(position).getUrl()));
-//                        intent.setPackage("com.android.chrome");
-                        startActivity(Intent.createChooser(intent, "Complete action using"));
-                    }
-                });
+                setTrailers();
+                startTrailerItemsClickListener();
             }
         }
 
@@ -261,7 +247,7 @@ public class DetailsFragment extends Fragment {
                 for (int i = 0; i < arr.length(); i++) {
                     review = new Review();
                     review.setAuthor(arr.getJSONObject(i).getString("author"));
-                    review.setDescription(arr.getJSONObject(i).getString("content"));
+                    review.setComment(arr.getJSONObject(i).getString("content"));
                     reviews.add(review);
                 }
             } catch (IOException e) {
@@ -273,7 +259,7 @@ public class DetailsFragment extends Fragment {
         }
     }
 
-    class DataBaseManagementTask extends AsyncTask<Boolean, Void, Void> {
+    class InsertIntoDataBaseTask extends AsyncTask<Boolean, Void, Void> {
         @Override
         protected Void doInBackground(Boolean... params) {
             DataBaseHelper helper = new DataBaseHelper(activity);
@@ -298,7 +284,7 @@ public class DetailsFragment extends Fragment {
                 for (int i = 0; i < reviews.size(); i++) {
                     values = new ContentValues();
                     values.put(ReviewTable.COLUMN_AUTHOR, reviews.get(i).getAuthor());
-                    values.put(ReviewTable.COLUMN_COMMENT, reviews.get(i).getDescription());
+                    values.put(ReviewTable.COLUMN_COMMENT, reviews.get(i).getComment());
                     values.put(ReviewTable.COLUMN_REFERENCE, movie.getId());
                     helper.getWritableDatabase().insert(ReviewTable.TABLE_NAME, null, values);
                 }
@@ -337,5 +323,94 @@ public class DetailsFragment extends Fragment {
             }
             return bitmap;
         }
+    }
+
+    class ReflectLocalData extends AsyncTask<Void, Void, Void>{
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            if(reviews.size() > 0)
+                setReviews();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if(trailers.size() > 0){
+                setTrailers();
+                startTrailerItemsClickListener();
+            }
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            DataBaseHelper helper = new DataBaseHelper(activity);
+
+            //retrieving reviews
+            Cursor cursor = helper.getReadableDatabase().query(ReviewTable.TABLE_NAME, null, ReviewTable.COLUMN_REFERENCE + " = ?", new String[]{movie.getId()}, null, null, null);
+            reviews = new ArrayList<>();
+            Review review;
+            while (cursor.moveToNext()){
+                review = new Review();
+                review.setAuthor(cursor.getString(1));
+                review.setComment(cursor.getString(2));
+                reviews.add(review);
+            }
+            publishProgress();
+
+            //retrieve traiers
+             cursor = helper.getReadableDatabase().query(TrailerTable.TABLE_NAME, null, TrailerTable.COLUMN_REFERENCE + " = ?", new String[]{movie.getId()}, null, null, null);
+            trailers = new ArrayList<>();
+            Trailer trailer;
+            while (cursor.moveToNext()){
+                trailer = new Trailer();
+                trailer.setUrl(cursor.getString(1));
+                trailers.add(trailer);
+            }
+            return null;
+        }
+    }
+
+    private void startTrailerItemsClickListener() {
+        trailersGridView.setOnTouchListener(new View.OnTouchListener() { //// TODO: 10/22/2016 remove this
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
+            }
+
+        });
+        trailersGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if(NetworkConnection.isConnected(activity)){
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setData(Uri.parse(getString(R.string.youtube_link) + trailers.get(position).getUrl()));
+//                        intent.setPackage("com.android.chrome");
+                    startActivity(Intent.createChooser(intent, "Complete action using"));
+                } else
+                    Snackbar.make(DetailsFragment.this.view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+
+    private void setTrailers() {
+        trailersHeader.setVisibility(View.VISIBLE);
+        trailersSeparator.setVisibility(View.VISIBLE);
+        trailersViewAdapter = new TrailersViewAdapter(getActivity(), R.id.trailers_gridview, trailers);
+        trailersGridView.setAdapter(trailersViewAdapter);
+        trailersGridView.setVisibility(View.VISIBLE);
+    }
+
+    private void setReviews() {
+        reviewSeparator.setVisibility(View.VISIBLE);
+        reviewHeader.setVisibility(View.VISIBLE);
+        reviewsAdapter = new ReviewsAdapter(reviews);
+        recyclerView.setAdapter(reviewsAdapter);
+        recyclerView.setNestedScrollingEnabled(false);
+        recyclerView.setVisibility(View.VISIBLE);
     }
 }

@@ -21,7 +21,7 @@
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
         android:layout_marginTop="5dp"
-        android:text="description"
+        android:text="comment"
         android:textAppearance="@style/TextAppearance.AppCompat"
         android:layout_below="@id/reviewer_name"/>
 

@@ -103,6 +103,12 @@ public class MainFragment extends Fragment{
         setHasOptionsMenu(true);
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -188,7 +194,7 @@ public class MainFragment extends Fragment{
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     Intent intent = new Intent(getActivity(), DetailsActivity.class);
                     intent.putExtra(getString(R.string.movie_data), movies.get(position));
-                    intent.putExtra("favourite", true);
+                    intent.putExtra(getString(R.string.is_favourite_key), true);
                     startActivity(intent);
                 }
             });

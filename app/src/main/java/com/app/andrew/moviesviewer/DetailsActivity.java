@@ -25,6 +25,7 @@ public class DetailsActivity extends AppCompatActivity {
         Movie movie =(Movie) getIntent().getSerializableExtra(getString(R.string.movie_data));
         Bundle bundle = new Bundle();
         bundle.putSerializable(getString(R.string.movie_data), movie);
+        bundle.putBoolean("favourite", getIntent().getBooleanExtra(getString(R.string.is_favourite_key), false));
         DetailsFragment fragment = new DetailsFragment();
         fragment.setArguments(bundle);
         if(savedInstanceState == null)

@@ -7,4 +7,5 @@
     <string name="popular">popular</string>
     <string name="movie_db_key">dc331a3ef1c03f6852a6aadd8c0eb20c</string>
     <string name="youtube_link">http://www.youtube.com/watch?v=</string>
+    <string name="is_favourite_key">favourite</string>
 </resources>

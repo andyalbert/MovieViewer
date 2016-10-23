@@ -6,7 +6,7 @@ package com.app.andrew.moviesviewer.DataHolder;
 
 public class Review {
     private String author;
-    private String description;
+    private String comment;
 
     public String getAuthor() {
         return author;
@@ -16,11 +16,11 @@ public class Review {
         this.author = author;
     }
 
-    public String getDescription() {
-        return description;
+    public String getComment() {
+        return comment;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }
