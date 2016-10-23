@@ -19,6 +19,15 @@ public class Movie implements /*Parcelable, */Serializable{
     private String date;
     private String overview;
     private String id;
+    private byte[] image;
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
 
     public String getId() {
         return id;

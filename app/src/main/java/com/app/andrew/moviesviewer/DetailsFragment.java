@@ -6,6 +6,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -24,6 +26,8 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.app.andrew.moviesviewer.Adapters.ReviewsAdapter;
 import com.app.andrew.moviesviewer.Adapters.TrailersViewAdapter;
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract.*;
@@ -31,7 +35,7 @@ import com.app.andrew.moviesviewer.DataBase.DataBaseHelper;
 import com.app.andrew.moviesviewer.DataHolder.Movie;
 import com.app.andrew.moviesviewer.DataHolder.Review;
 import com.app.andrew.moviesviewer.DataHolder.Trailer;
-import com.squareup.picasso.Picasso;
+import com.app.andrew.moviesviewer.utilities.ImageConverter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,6 +45,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -71,6 +76,7 @@ public class DetailsFragment extends Fragment {
     private boolean originalState; // used to detect whether to change the db state or not
     private SharedPreferences preferences;
     private Activity activity;
+    private DownloadImageTask downloadImageTask;
     //    private Bitmap poster;
 
     @Override
@@ -127,6 +133,7 @@ public class DetailsFragment extends Fragment {
             dataBaseManagementTask.execute(currentState);
             originalState = currentState;
         }
+        Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -139,6 +146,9 @@ public class DetailsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.details_fragment, container);
+        imageView = (ImageView) view.findViewById(R.id.movie_image);
+        downloadImageTask = new DownloadImageTask();
+        downloadImageTask.execute(movie.getUrl());
 
         originalState = false;
         recyclerView = (RecyclerView) view.findViewById(R.id.reviews_recycler_view);
@@ -150,15 +160,15 @@ public class DetailsFragment extends Fragment {
         reviewHeader = (TextView) view.findViewById(R.id.review_header);
         trailersHeader = (TextView) view.findViewById(R.id.trailers_header);
         trailersSeparator = view.findViewById(R.id.trailers_separator);
-        ReviewsTask reviewsTask = new ReviewsTask();
-        reviewsTask.execute(movie.getId());
+        ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
+        reviewsAndTrailersTask.execute(movie.getId());
 
 
         titleText = (TextView) view.findViewById(R.id.movie_title_text);
         overviewText = (TextView) view.findViewById(R.id.overview_text);
         releaseDataText = (TextView) view.findViewById(R.id.release_date);
         ratingBar = (RatingBar) view.findViewById(R.id.movie_rating);
-        imageView = (ImageView) view.findViewById(R.id.movie_image);
+
 
 
         ratingBar.setRating((float) (movie.getRating() / 2));
@@ -168,11 +178,11 @@ public class DetailsFragment extends Fragment {
 
 //        imageView.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
         //       imageView.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
-        Picasso.with(getActivity()).load(movie.getUrl()).into(imageView);
+        //Picasso.with(getActivity()).load(movie.getUrl()).into(imageView); //todo is this right ? i replaced it with imagemap
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
-    class ReviewsTask extends AsyncTask<String, Void, Void> {
+    class ReviewsAndTrailersTask extends AsyncTask<String, Void, Void> {
 
         @Override
         protected void onPostExecute(Void aVoid) {
@@ -270,6 +280,7 @@ public class DetailsFragment extends Fragment {
             if (params[0]) { //add
                 ContentValues values = new ContentValues();
                 values.put(MovieTable._ID, movie.getId());
+                values.put(MovieTable.COLUMN_IMAGE, movie.getImage());
                 values.put(MovieTable.COLUMN_DATE, movie.getDate());
                 values.put(MovieTable.COLUMN_IMAGE_URL, movie.getUrl());
                 values.put(MovieTable.COLUMN_OVERVIEW, movie.getOverview());
@@ -298,6 +309,33 @@ public class DetailsFragment extends Fragment {
             }
             helper.close();
             return null;
+        }
+    }
+
+    class DownloadImageTask extends AsyncTask<String, Void, Bitmap>{
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            byte[] byteImgae = ImageConverter.bitmapTobyte(bitmap);
+            movie.setImage(byteImgae);
+            if(bitmap != null)
+                imageView.setImageBitmap(bitmap);
+        }
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            Bitmap bitmap = null;
+            try {
+                URL imageUrl = new URL(params[0]);
+                InputStream in = imageUrl.openStream();
+                bitmap = BitmapFactory.decodeStream(in);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return bitmap;
         }
     }
 }

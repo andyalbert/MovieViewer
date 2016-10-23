@@ -12,6 +12,7 @@ public class DataBaseContract {
         public static final String TABLE_NAME = "movie";
 
         public static final String COLUMN_IMAGE_URL = "url";
+        public static final String COLUMN_IMAGE = "image";
         public static final String COLUMN_TITLE = "title";
         public static final String COLUMN_RATING = "rating";
         public static final String COLUMN_DATE = "date";

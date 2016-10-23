@@ -28,7 +28,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 + MovieTable.COLUMN_IMAGE_URL + " STRING NOT NULL, "
                 + MovieTable.COLUMN_RATING + " REAL NOT NULL, "
                 + MovieTable.COLUMN_DATE + " TEXT NOT NULL, "
-                + MovieTable.COLUMN_OVERVIEW + " TEXT NOT NULL "
+                + MovieTable.COLUMN_OVERVIEW + " TEXT NOT NULL ,"
+                + MovieTable.COLUMN_IMAGE + " BLOB NOT NULL "
                 + " )";
 
         final String SQL_CREATE_REVIEW = "CREATE TABLE " + ReviewTable.TABLE_NAME + " ("

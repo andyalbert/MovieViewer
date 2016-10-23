@@ -2,6 +2,7 @@ package com.app.andrew.moviesviewer.Adapters;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -12,7 +13,10 @@ import android.widget.ImageView;
 
 import com.app.andrew.moviesviewer.DataHolder.Movie;
 import com.app.andrew.moviesviewer.R;
+import com.app.andrew.moviesviewer.utilities.ImageConverter;
 import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
 
 /**
  * Created by andrew on 10/5/16.
@@ -20,9 +24,9 @@ import com.squareup.picasso.Picasso;
 
 public class MovieViewadapter extends ArrayAdapter<Movie> {
     private Context context;
-    private Movie[] movies;
+    private ArrayList<Movie> movies;
 
-    public MovieViewadapter(Context context, int resource, Movie[] movies) {
+    public MovieViewadapter(Context context, int resource, ArrayList<Movie> movies) {
         super(context, resource);
         this.context = context;
         this.movies = movies;
@@ -30,30 +34,36 @@ public class MovieViewadapter extends ArrayAdapter<Movie> {
 
     @Override
     public int getCount() {
-        return movies.length;
+        return movies.size();
     }
 
     @Nullable
     @Override
     public Movie getItem(int position) {
-        return movies[position];
+        return movies.get(position);
     }
 
     @NonNull
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
-        if(convertView == null){
-            LayoutInflater inflater = ((Activity)context).getLayoutInflater();
+        if (convertView == null) {
+            LayoutInflater inflater = ((Activity) context).getLayoutInflater();
             convertView = inflater.inflate(R.layout.movie_layout, parent, false);
             holder = new ViewHolder();
-            holder.setImageView((ImageView)convertView.findViewById(R.id.image));
+            holder.setImageView((ImageView) convertView.findViewById(R.id.image));
             convertView.setTag(holder);
-        }
-        else
+        } else
             holder = (ViewHolder) convertView.getTag();
-        Picasso.with(context).load(movies[position].getUrl()).into(holder.getImageView());
-    //    holder.getImageView().getLayoutParams().width = MainActivity.IMAGE_WIDTH;
+
+        if (movies.get(position).getUrl() == null){
+            Bitmap image = ImageConverter.bytetoBitmap(movies.get(position).getImage());
+            holder.getImageView().setImageBitmap(image);
+        } else {
+            Picasso.with(context).load(movies.get(position).getUrl()).into(holder.getImageView());
+        }
+
+        //    holder.getImageView().getLayoutParams().width = MainActivity.IMAGE_WIDTH;
 //        ImageView view = (ImageView) convertView.findViewById(R.id.image);
 //        view.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
 //        view.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
@@ -62,7 +72,8 @@ public class MovieViewadapter extends ArrayAdapter<Movie> {
 //        Picasso.with(context).load(movies[position].getUrl()).into(view);
         return convertView;
     }
-    static class ViewHolder{
+
+    static class ViewHolder {
         private ImageView imageView;
 
         public ImageView getImageView() {

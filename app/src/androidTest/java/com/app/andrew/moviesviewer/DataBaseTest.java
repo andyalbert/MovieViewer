@@ -25,8 +25,8 @@ public class DataBaseTest {
     public void testInsert() throws Exception {
 
         Cursor cursor = helper.getReadableDatabase().query("movie", null, null, null, null, null, null);
-        if(cursor.moveToFirst())
-            return;// only run if no such available
+    //    if(cursor.moveToFirst())
+    //        return;// only run if no such available
         ContentValues values = new ContentValues();
         values.put("_id", 326);
         values.put("url", "abc");
@@ -35,8 +35,11 @@ public class DataBaseTest {
         values.put("date", "5 -7");
         values.put("overview", "very good");
         long id = helper.getWritableDatabase().insert("movie", null, values);
+
         assertNotEquals(id, -1);
 
+        id = helper.getReadableDatabase().delete("movie", DataBaseContract.MovieTable._ID + " = ?", new String[] {String.valueOf(id)});
+        assertEquals(id, -1);
     }
 
     @Test
