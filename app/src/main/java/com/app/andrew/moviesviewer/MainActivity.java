@@ -16,7 +16,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         //getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        final ActionBar bar = getSupportActionBar();
+        //final ActionBar bar = getSupportActionBar();
        // bar.setDisplayHomeAsUpEnabled(true);
         //bar.setDisplayUseLogoEnabled(true);
 

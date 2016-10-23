@@ -111,7 +111,6 @@ public class MainFragment extends Fragment{
         if(!NetworkConnection.isConnected(getActivity()))
             Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
         else
-            //// TODO: 10/6/16 remove the key, change it to loader ?
             fetshingTask.execute(source, getString(R.string.movie_db_key));
     }
 
@@ -151,7 +150,7 @@ public class MainFragment extends Fragment{
                     movies[i] = new Movie();
                     movies[i].setRating(arr.getJSONObject(i).getDouble("vote_average"));
                     movies[i].setTitle(arr.getJSONObject(i).getString("title"));
-                    movies[i].setDate(arr.getJSONObject(i).getString("release_date"));
+                    movies[i].setDate(arr.getJSONObject(i).getString("release_date").substring(0, 4));
                     movies[i].setUrl(getString(R.string.image_url) + arr.getJSONObject(i).getString("poster_path"));
                     movies[i].setOverview(arr.getJSONObject(i).getString("overview"));
                     movies[i].setId(String.valueOf(arr.getJSONObject(i).getInt("id")));
