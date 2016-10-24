@@ -29,6 +29,7 @@ public class DataBaseContract {
     public static final class TrailerTable implements BaseColumns{
         public static final String TABLE_NAME = "trailers";
 
+        public static final String COLUMN_NAME = "name";
         public static final String COLUMN_URL = "url";
         public static final String COLUMN_REFERENCE = "ref";
     }

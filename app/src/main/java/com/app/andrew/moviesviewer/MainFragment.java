@@ -1,5 +1,6 @@
 package com.app.andrew.moviesviewer;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.database.Cursor;
@@ -40,13 +41,13 @@ import com.app.andrew.moviesviewer.DataBase.DataBaseContract.*;
  * Created by andrew on 10/5/16.
  */
 
-public class MainFragment extends Fragment{
+public class MainFragment extends Fragment {
     private GridView gridView;
     private MovieViewadapter movieViewadapter;
     private ArrayList<Movie> movies;
     private DataFetshingTask fetshingTask;
     private View view;
-    int optionMenuState = 1;
+    private int optionMenuState = 1;
     private LocalDataFetchingTask localDataFetchingTask;
     private DataBaseHelper helper;
 
@@ -58,12 +59,20 @@ public class MainFragment extends Fragment{
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.item_top_rated:
+                if (!NetworkConnection.isConnected(getActivity())) {
+                    Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
+                    return false;
+                }
                 optionMenuState = 1;
                 loadData(getString(R.string.top_rated));
                 return true;
             case R.id.item_most_popular:
+                if (!NetworkConnection.isConnected(getActivity())) {
+                    Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
+                    return false;
+                }
                 optionMenuState = 2;
                 loadData(getString(R.string.popular));
                 return true;
@@ -79,7 +88,7 @@ public class MainFragment extends Fragment{
 
     @Override
     public void onPrepareOptionsMenu(Menu menu) {
-        switch (optionMenuState){
+        switch (optionMenuState) {
             case 1:
                 menu.getItem(0).setEnabled(false);
                 menu.getItem(1).setEnabled(true);
@@ -104,28 +113,67 @@ public class MainFragment extends Fragment{
     }
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            movies = (ArrayList<Movie>) savedInstanceState.getSerializable("movies");
+            optionMenuState = savedInstanceState.getInt("menuState");
+            movieViewadapter = new MovieViewadapter(getActivity(), R.id.movies_gridview, movies);
+            gridView.setAdapter(movieViewadapter);
+            gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    if (optionMenuState == 3) {
+                        Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                        intent.putExtra(getString(R.string.movie_data), movies.get(i));
+                        intent.putExtra(getString(R.string.is_favourite_key), true);
+                        startActivityForResult(intent, 1);
+                    } else {
+
+                        if (!NetworkConnection.isConnected(getActivity())) {
+                            Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                        intent.putExtra(getString(R.string.movie_data), movies.get(i));
+                        startActivity(intent);
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable("movies", movies);
+        outState.putInt("menuState", optionMenuState);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        
+        //super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1 && resultCode == Activity.RESULT_OK/* && optionMenuState == 3*/) {
+            localDataFetchingTask = new LocalDataFetchingTask();
+            localDataFetchingTask.execute();
+        }
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_main, container);
-        gridView = (GridView)view.findViewById(R.id.movies_gridview);
-     //   Toast.makeText(getActivity(), "view", Toast.LENGTH_SHORT).show();
-        loadData(getString(R.string.top_rated));
+        gridView = (GridView) view.findViewById(R.id.movies_gridview);
+        //   Toast.makeText(getActivity(), "view", Toast.LENGTH_SHORT).show();
+        if (savedInstanceState == null)
+            loadData(getString(R.string.top_rated));
 
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
-    private void loadData(String source){
+    private void loadData(String source) {
         fetshingTask = new DataFetshingTask();
-        if(!NetworkConnection.isConnected(getActivity()))
-            Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
-        else
-            fetshingTask.execute(source, getString(R.string.movie_db_key));
+        fetshingTask.execute(source, getString(R.string.movie_db_key));
     }
 
     class DataFetshingTask extends AsyncTask<String, Void, Void> {
@@ -136,8 +184,7 @@ public class MainFragment extends Fragment{
             gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    if(!NetworkConnection.isConnected(getActivity()))
-                    {
+                    if (!NetworkConnection.isConnected(getActivity())) {
                         Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                         return;
                     }
@@ -161,7 +208,7 @@ public class MainFragment extends Fragment{
                 JSONArray arr = json.getJSONArray("results");
                 movies = new ArrayList<>();
                 Movie movie;
-                for(int i = 0;i < arr.length();i++){
+                for (int i = 0; i < arr.length(); i++) {
                     movie = new Movie();
                     movie.setRating(arr.getJSONObject(i).getDouble("vote_average"));
                     movie.setTitle(arr.getJSONObject(i).getString("title"));
@@ -184,7 +231,7 @@ public class MainFragment extends Fragment{
         }
     }
 
-    class LocalDataFetchingTask extends AsyncTask<Void, Void, Void>{
+    class LocalDataFetchingTask extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
@@ -195,7 +242,7 @@ public class MainFragment extends Fragment{
                     Intent intent = new Intent(getActivity(), DetailsActivity.class);
                     intent.putExtra(getString(R.string.movie_data), movies.get(position));
                     intent.putExtra(getString(R.string.is_favourite_key), true);
-                    startActivity(intent);
+                    startActivityForResult(intent, 1);
                 }
             });
         }
@@ -203,10 +250,10 @@ public class MainFragment extends Fragment{
         @Override
         protected Void doInBackground(Void... params) {
             helper = new DataBaseHelper(getActivity());
-            Cursor cursor =  helper.getReadableDatabase().query(MovieTable.TABLE_NAME, null, null, null, null, null, null);
+            Cursor cursor = helper.getReadableDatabase().query(MovieTable.TABLE_NAME, null, null, null, null, null, null);
             movies = new ArrayList<>();
             Movie movie;
-            while(cursor.moveToNext()){
+            while (cursor.moveToNext()) {
                 movie = new Movie();
                 movie.setDate(cursor.getString(4));
                 movie.setId(cursor.getString(0));

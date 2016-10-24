@@ -20,18 +20,16 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.app.andrew.moviesviewer.Listeners.RecyclerClickListener;
 import com.app.andrew.moviesviewer.Adapters.ReviewsAdapter;
-import com.app.andrew.moviesviewer.Adapters.TrailersViewAdapter;
+import com.app.andrew.moviesviewer.Adapters.TrailersAdapter;
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract.*;
 import com.app.andrew.moviesviewer.DataBase.DataBaseHelper;
 import com.app.andrew.moviesviewer.DataHolder.Movie;
@@ -64,12 +62,12 @@ public class DetailsFragment extends Fragment {
     private TextView overviewText;
     private RatingBar ratingBar;
     private ImageView imageView;
-    private RecyclerView recyclerView;
+    private RecyclerView reviewsRecyclerView;
     private ReviewsAdapter reviewsAdapter;
     private ArrayList<Review> reviews;
     private ArrayList<Trailer> trailers;
-    private GridView trailersGridView;
-    private TrailersViewAdapter trailersViewAdapter;
+    private RecyclerView trailersRecyclerView;
+    private TrailersAdapter trailersAdapter;
     private TextView reviewHeader;
     private View reviewSeparator;
     private TextView trailersHeader;
@@ -115,7 +113,7 @@ public class DetailsFragment extends Fragment {
                 if (preferences.getBoolean(movie.getId(), false)) { //movie is favourite, remove it
                     item.setIcon(R.mipmap.ic_not_favourite);
                     editor.remove(movie.getId());
-                    editor.commit(); //todo (or commit ? )
+                    editor.commit(); //todo (or apply ? )
                     currentState = false;
                 } else {
                     item.setIcon(R.mipmap.ic_favourite);
@@ -126,6 +124,8 @@ public class DetailsFragment extends Fragment {
                 return true;
             case android.R.id.home:
                 getActivity().onBackPressed();
+                if(currentState != originalState)
+                    getActivity().setResult(Activity.RESULT_OK);
             default:
                 return false;
         }
@@ -140,6 +140,11 @@ public class DetailsFragment extends Fragment {
             originalState = currentState;
         }
         Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
     }
 
     @Override
@@ -160,11 +165,13 @@ public class DetailsFragment extends Fragment {
         overviewText = (TextView) view.findViewById(R.id.overview_text);
         releaseDataText = (TextView) view.findViewById(R.id.release_date);
         ratingBar = (RatingBar) view.findViewById(R.id.movie_rating);
-        recyclerView = (RecyclerView) view.findViewById(R.id.reviews_recycler_view);
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(mLayoutManager);
-        trailersGridView = (GridView) view.findViewById(R.id.trailers_gridview);
-        //       recyclerView.setItemAnimator(new DefaultItemAnimator());
+        reviewsRecyclerView = (RecyclerView) view.findViewById(R.id.reviews_recycler_view);
+        RecyclerView.LayoutManager reviewLayoutManager = new LinearLayoutManager(getActivity());
+        RecyclerView.LayoutManager trailerLayoutManager = new LinearLayoutManager(getActivity());
+        reviewsRecyclerView.setLayoutManager(reviewLayoutManager);
+        trailersRecyclerView = (RecyclerView) view.findViewById(R.id.trailers_recycler_view);
+        trailersRecyclerView.setLayoutManager(trailerLayoutManager);
+        //       reviewsRecyclerView.setItemAnimator(new DefaultItemAnimator());
         reviewSeparator = view.findViewById(R.id.reviews_separator);
         reviewHeader = (TextView) view.findViewById(R.id.review_header);
         trailersHeader = (TextView) view.findViewById(R.id.trailers_header);
@@ -225,6 +232,7 @@ public class DetailsFragment extends Fragment {
                 Trailer trailer;
                 for (int i = 0; i < arr.length(); i++) {
                     trailer = new Trailer();
+                    trailer.setName(arr.getJSONObject(i).getString("name"));
                     trailer.setUrl(arr.getJSONObject(i).getString("key"));
                     trailers.add(trailer);
                 }
@@ -278,6 +286,7 @@ public class DetailsFragment extends Fragment {
                     values = new ContentValues();
                     values.put(TrailerTable.COLUMN_URL, trailers.get(i).getUrl());
                     values.put(TrailerTable.COLUMN_REFERENCE, movie.getId());
+                    values.put(TrailerTable.COLUMN_NAME, trailers.get(i).getName());
                     helper.getWritableDatabase().insert(TrailerTable.TABLE_NAME, null, values);
                 }
 
@@ -367,6 +376,7 @@ public class DetailsFragment extends Fragment {
             while (cursor.moveToNext()){
                 trailer = new Trailer();
                 trailer.setUrl(cursor.getString(1));
+                trailer.setName(cursor.getString(2));
                 trailers.add(trailer);
             }
             return null;
@@ -374,17 +384,10 @@ public class DetailsFragment extends Fragment {
     }
 
     private void startTrailerItemsClickListener() {
-        trailersGridView.setOnTouchListener(new View.OnTouchListener() { //// TODO: 10/22/2016 remove this
+        //// TODO: 10/23/16 remove this shit
+        trailersRecyclerView.addOnItemTouchListener(new RecyclerClickListener(getActivity(), new RecyclerClickListener.OnItemClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                v.getParent().requestDisallowInterceptTouchEvent(true);
-                return false;
-            }
-
-        });
-        trailersGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            public void onClick(View view, int position) {
                 if(NetworkConnection.isConnected(activity)){
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setData(Uri.parse(getString(R.string.youtube_link) + trailers.get(position).getUrl()));
@@ -392,25 +395,25 @@ public class DetailsFragment extends Fragment {
                     startActivity(Intent.createChooser(intent, "Complete action using"));
                 } else
                     Snackbar.make(DetailsFragment.this.view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
-
             }
-        });
+        }));
     }
 
     private void setTrailers() {
         trailersHeader.setVisibility(View.VISIBLE);
         trailersSeparator.setVisibility(View.VISIBLE);
-        trailersViewAdapter = new TrailersViewAdapter(getActivity(), R.id.trailers_gridview, trailers);
-        trailersGridView.setAdapter(trailersViewAdapter);
-        trailersGridView.setVisibility(View.VISIBLE);
+        trailersAdapter = new TrailersAdapter(trailers);
+        trailersRecyclerView.setAdapter(trailersAdapter);
+        trailersRecyclerView.setNestedScrollingEnabled(false);
+        trailersRecyclerView.setVisibility(View.VISIBLE);
     }
 
     private void setReviews() {
         reviewSeparator.setVisibility(View.VISIBLE);
         reviewHeader.setVisibility(View.VISIBLE);
         reviewsAdapter = new ReviewsAdapter(reviews);
-        recyclerView.setAdapter(reviewsAdapter);
-        recyclerView.setNestedScrollingEnabled(false);
-        recyclerView.setVisibility(View.VISIBLE);
+        reviewsRecyclerView.setAdapter(reviewsAdapter);
+        reviewsRecyclerView.setNestedScrollingEnabled(false);
+        reviewsRecyclerView.setVisibility(View.VISIBLE);
     }
 }

@@ -11,6 +11,20 @@ public class MainActivity extends AppCompatActivity {
     public static int IMAGE_HEIGHT;
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt("width", IMAGE_WIDTH);
+        outState.putInt("height", IMAGE_HEIGHT);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        IMAGE_HEIGHT = savedInstanceState.getInt("height");
+        IMAGE_WIDTH = savedInstanceState.getInt("width");
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -20,9 +34,12 @@ public class MainActivity extends AppCompatActivity {
        // bar.setDisplayHomeAsUpEnabled(true);
         //bar.setDisplayUseLogoEnabled(true);
 
-        setImageDimentions();
-        if(savedInstanceState == null)
+
+        if(savedInstanceState == null){
             getFragmentManager().beginTransaction().replace(R.id.activity_main, new MainFragment()).commit();
+            setImageDimentions();
+        }
+
     }
 
     public void setImageDimentions(){

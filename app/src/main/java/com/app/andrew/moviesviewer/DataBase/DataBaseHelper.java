@@ -25,11 +25,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         final String SQL_CREATE_MOVIE = "CREATE TABLE " + MovieTable.TABLE_NAME + " ("
                 + MovieTable._ID + " INTEGER PRIMARY KEY, "
                 + MovieTable.COLUMN_TITLE + " TEXT NOT NULL, "
-                + MovieTable.COLUMN_IMAGE_URL + " STRING NOT NULL, "
+                + MovieTable.COLUMN_IMAGE_URL + " STRING , " //// TODO: 10/23/16 not null for this and the image
                 + MovieTable.COLUMN_RATING + " REAL NOT NULL, "
                 + MovieTable.COLUMN_DATE + " TEXT NOT NULL, "
                 + MovieTable.COLUMN_OVERVIEW + " TEXT NOT NULL ,"
-                + MovieTable.COLUMN_IMAGE + " BLOB NOT NULL "
+                + MovieTable.COLUMN_IMAGE + " BLOB "
                 + " )";
 
         final String SQL_CREATE_REVIEW = "CREATE TABLE " + ReviewTable.TABLE_NAME + " ("
@@ -43,6 +43,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         final String SQL_CREATE_TRAILER = "CREATE TABLE " + TrailerTable.TABLE_NAME + " ("
                 + TrailerTable._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + TrailerTable.COLUMN_URL + " TEXT NOT NULL ,"
+                + TrailerTable.COLUMN_NAME + " TEXT NOT NULL, "
                 + TrailerTable.COLUMN_REFERENCE + " INTEGER NOT NULL ,"
                 + " FOREIGN KEY (" + TrailerTable.COLUMN_REFERENCE + ") REFERENCES "
                 + MovieTable.TABLE_NAME + " (" + MovieTable._ID + ") " + " ON DELETE CASCADE "

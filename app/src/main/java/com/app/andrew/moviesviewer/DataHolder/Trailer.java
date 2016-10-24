@@ -6,6 +6,15 @@ package com.app.andrew.moviesviewer.DataHolder;
 
 public class Trailer {
     private String url;
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getUrl() {
         return url;
