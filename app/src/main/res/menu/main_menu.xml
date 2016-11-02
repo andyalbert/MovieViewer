@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
     <item android:title="Top rated"
         android:enabled="false"
         android:id="@+id/item_top_rated"/>
@@ -7,4 +9,10 @@
         android:id="@+id/item_most_popular"/>
     <item android:title="Favourite"
         android:id="@+id/item_favourite" />
+    <item app:showAsAction="always"
+        android:title="favourite"
+        android:icon="@mipmap/ic_not_favourite"
+        android:id="@+id/item_is_favourite"
+        android:visible="false"
+        />
 </menu>

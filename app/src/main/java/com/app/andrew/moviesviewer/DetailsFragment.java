@@ -12,6 +12,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
@@ -81,18 +82,46 @@ public class DetailsFragment extends Fragment {
     private boolean isFavourite;
     private ReflectLocalData localData;
     private View view;
+    private RecyclerView.LayoutManager reviewLayoutManager;
+    private RecyclerView.LayoutManager trailerLayoutManager;
+    private Bundle savedState;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable("movie", movie);
+        outState.putBoolean("isfavourite", isFavourite);
+        outState.putSerializable("trailers", trailers);
+        outState.putSerializable("reviews", reviews);
+        outState.putBoolean("currentstate", currentState);
+        outState.putBoolean("originalstate", originalState);
+        outState.putParcelable("reviewstate", reviewsRecyclerView.getLayoutManager().onSaveInstanceState());
+        outState.putParcelable("trailerstate", trailersRecyclerView.getLayoutManager().onSaveInstanceState());
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        movie = (Movie) getArguments().getSerializable(getString(R.string.movie_data));
-        isFavourite = getArguments().getBoolean(getString(R.string.is_favourite_key));
         setHasOptionsMenu(true);
+        savedState = savedInstanceState;
         preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        if(savedInstanceState == null){
+            movie = (Movie) getArguments().getSerializable(getString(R.string.movie_data));
+            isFavourite = getArguments().getBoolean(getString(R.string.is_favourite_key));
+        } else {
+            movie = (Movie) savedInstanceState.getSerializable("movie");
+            isFavourite = savedInstanceState.getBoolean("isfavourite");
+            trailers = (ArrayList<Trailer>) savedInstanceState.getSerializable("trailers");
+            reviews = (ArrayList<Review>) savedInstanceState.getSerializable("reviews");
+            currentState = savedInstanceState.getBoolean("currentstate");
+            originalState = savedInstanceState.getBoolean("originalstate");
+        }
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        if(isFavourite)
+            return;
         inflater.inflate(R.menu.details_menu, menu);
         MenuItem item = menu.findItem(R.id.item_is_favourite);
         if (preferences.getBoolean(movie.getId(), false)) {
@@ -139,7 +168,7 @@ public class DetailsFragment extends Fragment {
             insertIntoDataBaseTask.execute(currentState);
             originalState = currentState;
         }
-        Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
+     //   Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -166,11 +195,19 @@ public class DetailsFragment extends Fragment {
         releaseDataText = (TextView) view.findViewById(R.id.release_date);
         ratingBar = (RatingBar) view.findViewById(R.id.movie_rating);
         reviewsRecyclerView = (RecyclerView) view.findViewById(R.id.reviews_recycler_view);
-        RecyclerView.LayoutManager reviewLayoutManager = new LinearLayoutManager(getActivity());
-        RecyclerView.LayoutManager trailerLayoutManager = new LinearLayoutManager(getActivity());
-        reviewsRecyclerView.setLayoutManager(reviewLayoutManager);
         trailersRecyclerView = (RecyclerView) view.findViewById(R.id.trailers_recycler_view);
+        reviewLayoutManager  = new LinearLayoutManager(getActivity());
+        trailerLayoutManager = new LinearLayoutManager(getActivity());
+        reviewsRecyclerView.setLayoutManager(reviewLayoutManager);
         trailersRecyclerView.setLayoutManager(trailerLayoutManager);
+//        if(savedInstanceState != null){
+//            reviewsRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("reviewstate"));
+//            trailersRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("trailerstate"));
+//
+//        } else {
+//
+//        }
+
         //       reviewsRecyclerView.setItemAnimator(new DefaultItemAnimator());
         reviewSeparator = view.findViewById(R.id.reviews_separator);
         reviewHeader = (TextView) view.findViewById(R.id.review_header);
@@ -183,20 +220,43 @@ public class DetailsFragment extends Fragment {
         titleText.setText(movie.getTitle());
         overviewText.setText(movie.getOverview());
 
-        if(!isFavourite){
-            downloadImageTask = new DownloadImageTask();
-            downloadImageTask.execute(movie.getUrl());
+        if(savedInstanceState != null){
+            if(!isFavourite){
+                imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
+                if (reviews.size() > 0) {
+                    setReviews();
+                }
+                if (trailers.size() > 0) {
+                    setTrailers();
+                    startTrailerItemsClickListener();
+                }
+            }else{
+                imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
+                if (reviews.size() > 0) {
+                    setReviews();
+                }
+                if (trailers.size() > 0) {
+                    setTrailers();
+                    startTrailerItemsClickListener();
+                }
+            }
+        } else{
+            if(!isFavourite){
+                downloadImageTask = new DownloadImageTask();
+                downloadImageTask.execute(movie.getUrl());
 
-            ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
-            reviewsAndTrailersTask.execute(movie.getId());
-            //imageView.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
-            //imageView.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
-            //Picasso.with(getActivity()).load(movie.getUrl()).into(imageView); //todo is this right ? i replaced it with imagemap
-        } else {
-            imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
-            localData = new ReflectLocalData();
-            localData.execute();
+                ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
+                reviewsAndTrailersTask.execute(movie.getId());
+                //imageView.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
+                //imageView.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
+                //Picasso.with(getActivity()).load(movie.getUrl()).into(imageView); //todo is this right ? i replaced it with imagemap
+            } else {
+                imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
+                localData = new ReflectLocalData();
+                localData.execute();
+            }
         }
+
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
@@ -312,8 +372,8 @@ public class DetailsFragment extends Fragment {
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
-            byte[] byteImgae = ImageConverter.bitmapTobyte(bitmap);
-            movie.setImage(byteImgae);
+            byte[] byteImage = ImageConverter.bitmapTobyte(bitmap);
+            movie.setImage(byteImage);
             if(bitmap != null)
                 imageView.setImageBitmap(bitmap);
         }
@@ -368,7 +428,7 @@ public class DetailsFragment extends Fragment {
                 reviews.add(review);
             }
             publishProgress();
-
+            cursor.close();
             //retrieve traiers
              cursor = helper.getReadableDatabase().query(TrailerTable.TABLE_NAME, null, TrailerTable.COLUMN_REFERENCE + " = ?", new String[]{movie.getId()}, null, null, null);
             trailers = new ArrayList<>();
@@ -379,6 +439,7 @@ public class DetailsFragment extends Fragment {
                 trailer.setName(cursor.getString(2));
                 trailers.add(trailer);
             }
+            cursor.close();
             return null;
         }
     }
@@ -404,6 +465,8 @@ public class DetailsFragment extends Fragment {
         trailersSeparator.setVisibility(View.VISIBLE);
         trailersAdapter = new TrailersAdapter(trailers);
         trailersRecyclerView.setAdapter(trailersAdapter);
+        if(savedState != null)
+            trailersRecyclerView.getLayoutManager().onRestoreInstanceState(savedState.getParcelable("trailerstate"));
         trailersRecyclerView.setNestedScrollingEnabled(false);
         trailersRecyclerView.setVisibility(View.VISIBLE);
     }
@@ -413,6 +476,8 @@ public class DetailsFragment extends Fragment {
         reviewHeader.setVisibility(View.VISIBLE);
         reviewsAdapter = new ReviewsAdapter(reviews);
         reviewsRecyclerView.setAdapter(reviewsAdapter);
+        if(savedState != null)
+            reviewsRecyclerView.getLayoutManager().onRestoreInstanceState(savedState.getParcelable("reviewstate"));
         reviewsRecyclerView.setNestedScrollingEnabled(false);
         reviewsRecyclerView.setVisibility(View.VISIBLE);
     }
