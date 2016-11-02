@@ -3,14 +3,17 @@ package com.app.andrew.moviesviewer;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import com.app.andrew.moviesviewer.DataHolder.DataBaseInsertionData;
 import com.app.andrew.moviesviewer.DataHolder.Movie;
 
 /**
  * Created by andrew on 10/5/16.
  */
 
-public class DetailsActivity extends AppCompatActivity {
+public class DetailsActivity extends AppCompatActivity implements DetailsFragment.InsertIntoDataBase{
     private Movie movie;
+    private InsertIntoDataBaseTask dataBaseTask;
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -46,5 +49,12 @@ public class DetailsActivity extends AppCompatActivity {
             fragment.setArguments(bundle);
             getFragmentManager().beginTransaction().replace(R.id.details_activity, fragment).commit();
         }
+    }
+
+    @Override
+    public void insert(DataBaseInsertionData data) {
+        dataBaseTask = new InsertIntoDataBaseTask();
+        data.setActivity(DetailsActivity.this);
+        dataBaseTask.execute(data);
     }
 }

@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
@@ -28,6 +29,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.app.andrew.moviesviewer.DataHolder.DataBaseInsertionData;
 import com.app.andrew.moviesviewer.Listeners.RecyclerClickListener;
 import com.app.andrew.moviesviewer.Adapters.ReviewsAdapter;
 import com.app.andrew.moviesviewer.Adapters.TrailersAdapter;
@@ -73,7 +75,7 @@ public class DetailsFragment extends Fragment {
     private View reviewSeparator;
     private TextView trailersHeader;
     private View trailersSeparator;
-    private InsertIntoDataBaseTask insertIntoDataBaseTask;
+ //   private InsertIntoDataBaseTask insertIntoDataBaseTask;
     private boolean currentState;
     private boolean originalState; // used to detect whether to change the db state or not
     private SharedPreferences preferences;
@@ -85,6 +87,7 @@ public class DetailsFragment extends Fragment {
     private RecyclerView.LayoutManager reviewLayoutManager;
     private RecyclerView.LayoutManager trailerLayoutManager;
     private Bundle savedState;
+    private InsertIntoDataBase insertIntoDataBase;
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -164,8 +167,14 @@ public class DetailsFragment extends Fragment {
     public void onStop() {
         super.onStop();
         if(currentState != originalState){
-            insertIntoDataBaseTask = new InsertIntoDataBaseTask();
-            insertIntoDataBaseTask.execute(currentState);
+            DataBaseInsertionData data = new DataBaseInsertionData();
+            data.setMovie(movie);
+            data.setReviews(reviews);
+            data.setTrailers(trailers);
+            data.setAdd(currentState);
+            insertIntoDataBase.insert(data);
+         /*   insertIntoDataBaseTask = new InsertIntoDataBaseTask();
+            insertIntoDataBaseTask.execute(currentState);*/
             originalState = currentState;
         }
      //   Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
@@ -180,6 +189,7 @@ public class DetailsFragment extends Fragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         activity = (Activity) context; //used for the getdatabase in the asynctask, in case the activity is closeds
+        insertIntoDataBase = (InsertIntoDataBase) context;
     }
 
     @Nullable
@@ -326,7 +336,7 @@ public class DetailsFragment extends Fragment {
             return null;
         }
     }
-
+/*
     class InsertIntoDataBaseTask extends AsyncTask<Boolean, Void, Void> {
         @Override
         protected Void doInBackground(Boolean... params) {
@@ -366,7 +376,7 @@ public class DetailsFragment extends Fragment {
             return null;
         }
     }
-
+*/
     class DownloadImageTask extends AsyncTask<String, Void, Bitmap>{
 
         @Override
@@ -454,8 +464,9 @@ public class DetailsFragment extends Fragment {
                     intent.setData(Uri.parse(getString(R.string.youtube_link) + trailers.get(position).getUrl()));
 //                        intent.setPackage("com.android.chrome");
                     startActivity(Intent.createChooser(intent, "Complete action using"));
-                } else
+                } else //// TODO: 11/2/2016 test this on tablet
                     Snackbar.make(DetailsFragment.this.view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
+
             }
         }));
     }
@@ -480,5 +491,9 @@ public class DetailsFragment extends Fragment {
             reviewsRecyclerView.getLayoutManager().onRestoreInstanceState(savedState.getParcelable("reviewstate"));
         reviewsRecyclerView.setNestedScrollingEnabled(false);
         reviewsRecyclerView.setVisibility(View.VISIBLE);
+    }
+
+    public interface InsertIntoDataBase{
+        void insert(DataBaseInsertionData data);
     }
 }

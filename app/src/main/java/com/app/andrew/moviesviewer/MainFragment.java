@@ -2,6 +2,7 @@ package com.app.andrew.moviesviewer;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
@@ -50,6 +51,7 @@ public class MainFragment extends Fragment {
     private int optionMenuState = 1;
     private LocalDataFetchingTask localDataFetchingTask;
     private DataBaseHelper helper;
+    private SetDetailsFragmentData setDetailsFragmentData;
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -107,6 +109,12 @@ public class MainFragment extends Fragment {
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        setDetailsFragmentData = (SetDetailsFragmentData)context;
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
@@ -124,19 +132,20 @@ public class MainFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                     if (optionMenuState == 3) {
-                        Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                        setDetailsFragmentData.loadLocalData(movies.get(i), true);
+                      /*  Intent intent = new Intent(getActivity(), DetailsActivity.class);
                         intent.putExtra(getString(R.string.movie_data), movies.get(i));
                         intent.putExtra(getString(R.string.is_favourite_key), true);
-                        startActivityForResult(intent, 1);
+                        startActivityForResult(intent, 1);*/
                     } else {
-
-                        if (!NetworkConnection.isConnected(getActivity())) {
+                        setDetailsFragmentData.loadNetworkData(movies.get(i));
+                       /* if (!NetworkConnection.isConnected(getActivity())) {
                             Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                             return;
                         }
                         Intent intent = new Intent(getActivity(), DetailsActivity.class);
                         intent.putExtra(getString(R.string.movie_data), movies.get(i));
-                        startActivity(intent);
+                        startActivity(intent);*/
                     }
                 }
             });
@@ -184,13 +193,14 @@ public class MainFragment extends Fragment {
             gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    if (!NetworkConnection.isConnected(getActivity())) {
+                    setDetailsFragmentData.loadNetworkData(movies.get(i));
+                  /*  if (!NetworkConnection.isConnected(getActivity())) {
                         Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                         return;
                     }
                     Intent intent = new Intent(getActivity(), DetailsActivity.class);
                     intent.putExtra(getString(R.string.movie_data), movies.get(i));
-                    startActivity(intent);
+                    startActivity(intent);*/
                 }
             });
         }
@@ -239,10 +249,11 @@ public class MainFragment extends Fragment {
             gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                    setDetailsFragmentData.loadLocalData(movies.get(position), true);
+                  /*  Intent intent = new Intent(getActivity(), DetailsActivity.class);
                     intent.putExtra(getString(R.string.movie_data), movies.get(position));
                     intent.putExtra(getString(R.string.is_favourite_key), true);
-                    startActivityForResult(intent, 1);
+                    startActivityForResult(intent, 1);*/
                 }
             });
         }
@@ -268,5 +279,12 @@ public class MainFragment extends Fragment {
 
             return null;
         }
+    }
+
+    public interface SetDetailsFragmentData{
+
+        void loadLocalData(Movie movie, boolean b);
+
+        void loadNetworkData(Movie movie);
     }
 }
