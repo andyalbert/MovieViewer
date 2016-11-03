@@ -1,6 +1,7 @@
 package com.app.andrew.moviesviewer;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.os.AsyncTask;
 
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract;
@@ -22,6 +23,10 @@ public class InsertIntoDataBaseTask extends AsyncTask<DataBaseInsertionData, Voi
         DataBaseHelper helper = new DataBaseHelper(params[0].getActivity());
         Movie movie = params[0].getMovie();
         if (params[0].isAdd()) { //add
+            //// TODO: 11/2/2016 check this get pref
+            if(params[0].getActivity().getSharedPreferences(params[0].getActivity().getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE).getBoolean("isEmpty", false))
+                params[0].getActivity().getSharedPreferences(params[0].getActivity().getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE).edit().putBoolean("isEmpty", false).apply();
+
             ContentValues values = new ContentValues();
             values.put(DataBaseContract.MovieTable._ID, movie.getId());
             values.put(DataBaseContract.MovieTable.COLUMN_IMAGE, movie.getImage());

@@ -17,7 +17,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -51,16 +50,23 @@ public class MainFragment extends Fragment {
     private int optionMenuState = 1;
     private LocalDataFetchingTask localDataFetchingTask;
     private DataBaseHelper helper;
-    private SetDetailsFragmentData setDetailsFragmentData;
+    private MainFragmentListener mainFragmentListener;
+    private Menu menu;
+    private boolean clearEnabled;
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.main_menu, menu);
+        this.menu = menu;
+        if(clearEnabled)
+            menu.getItem(3).setVisible(true);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        clearEnabled = false;
+        menu.getItem(3).setVisible(false);
         switch (item.getItemId()) {
             case R.id.item_top_rated:
                 if (!NetworkConnection.isConnected(getActivity())) {
@@ -82,6 +88,15 @@ public class MainFragment extends Fragment {
                 optionMenuState = 3;
                 localDataFetchingTask = new LocalDataFetchingTask();
                 localDataFetchingTask.execute();
+                if(!getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE).getBoolean("isEmpty", false)){
+                    menu.getItem(3).setVisible(true);
+                    clearEnabled = true;
+                }
+                return true;
+            case R.id.item_clear_all:
+                mainFragmentListener.removeAllFromDataBase();
+                gridView.setAdapter(null);//// TODO: 11/2/2016 check this
+                item.setVisible(false);
                 return true;
             default:
                 return false;
@@ -111,12 +126,13 @@ public class MainFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        setDetailsFragmentData = (SetDetailsFragmentData)context;
+        mainFragmentListener = (MainFragmentListener)context;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        clearEnabled = false;
         setHasOptionsMenu(true);
     }
 
@@ -125,6 +141,7 @@ public class MainFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         if (savedInstanceState != null) {
             movies = (ArrayList<Movie>) savedInstanceState.getSerializable("movies");
+            clearEnabled = savedInstanceState.getBoolean("clear");
             optionMenuState = savedInstanceState.getInt("menuState");
             movieViewadapter = new MovieViewadapter(getActivity(), R.id.movies_gridview, movies);
             gridView.setAdapter(movieViewadapter);
@@ -132,13 +149,13 @@ public class MainFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                     if (optionMenuState == 3) {
-                        setDetailsFragmentData.loadLocalData(movies.get(i), true);
+                        mainFragmentListener.loadLocalData(movies.get(i), true);
                       /*  Intent intent = new Intent(getActivity(), DetailsActivity.class);
                         intent.putExtra(getString(R.string.movie_data), movies.get(i));
                         intent.putExtra(getString(R.string.is_favourite_key), true);
                         startActivityForResult(intent, 1);*/
                     } else {
-                        setDetailsFragmentData.loadNetworkData(movies.get(i));
+                        mainFragmentListener.loadNetworkData(movies.get(i));
                        /* if (!NetworkConnection.isConnected(getActivity())) {
                             Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                             return;
@@ -156,6 +173,7 @@ public class MainFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         outState.putSerializable("movies", movies);
         outState.putInt("menuState", optionMenuState);
+        outState.putBoolean("clear", clearEnabled);
         super.onSaveInstanceState(outState);
     }
 
@@ -193,7 +211,7 @@ public class MainFragment extends Fragment {
             gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    setDetailsFragmentData.loadNetworkData(movies.get(i));
+                    mainFragmentListener.loadNetworkData(movies.get(i));
                   /*  if (!NetworkConnection.isConnected(getActivity())) {
                         Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                         return;
@@ -249,7 +267,7 @@ public class MainFragment extends Fragment {
             gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    setDetailsFragmentData.loadLocalData(movies.get(position), true);
+                    mainFragmentListener.loadLocalData(movies.get(position), true);
                   /*  Intent intent = new Intent(getActivity(), DetailsActivity.class);
                     intent.putExtra(getString(R.string.movie_data), movies.get(position));
                     intent.putExtra(getString(R.string.is_favourite_key), true);
@@ -281,10 +299,12 @@ public class MainFragment extends Fragment {
         }
     }
 
-    public interface SetDetailsFragmentData{
+    public interface MainFragmentListener {
 
         void loadLocalData(Movie movie, boolean b);
 
         void loadNetworkData(Movie movie);
+
+        void removeAllFromDataBase();
     }
 }

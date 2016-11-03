@@ -107,7 +107,7 @@ public class DetailsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         savedState = savedInstanceState;
-        preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        preferences = getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE);
         if(savedInstanceState == null){
             movie = (Movie) getArguments().getSerializable(getString(R.string.movie_data));
             isFavourite = getArguments().getBoolean(getString(R.string.is_favourite_key));

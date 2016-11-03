@@ -2,13 +2,12 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="wrap_content"
-        android:orientation="vertical"
         android:layout_height="wrap_content">
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="70dp"
+            android:layout_height="120dp"
             android:background="@color/colorPrimary"
             android:elevation="5dp"
             android:id="@+id/colored_view"
@@ -26,29 +25,27 @@
                 />
         </FrameLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_height="wrap_content">
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:id="@+id/movie_image"
-                />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
-                android:text="year"
-                android:id="@+id/release_date"
-                android:textSize="34sp"
-                android:layout_marginLeft="30dp"
-                android:textAppearance="@style/TextAppearance.AppCompat"
-                />
-        </LinearLayout>
-
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/colored_view"
+            android:layout_marginLeft="15dp"
+            android:adjustViewBounds="true"
+            android:layout_marginTop="25dp"
+            android:id="@+id/movie_image"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:text="year"
+            android:layout_toRightOf="@id/movie_image"
+            android:layout_below="@+id/colored_view"
+            android:id="@+id/release_date"
+            android:textSize="34sp"
+            android:layout_marginLeft="30dp"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            />
         <android.support.v7.widget.AppCompatRatingBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -136,5 +133,5 @@
             android:visibility="invisible"
             />
 
-    </LinearLayout>
+    </RelativeLayout>
 </ScrollView>
