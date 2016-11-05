@@ -40,6 +40,7 @@ import com.app.andrew.moviesviewer.DataHolder.Review;
 import com.app.andrew.moviesviewer.DataHolder.Trailer;
 import com.app.andrew.moviesviewer.utilities.ImageConverter;
 import com.app.andrew.moviesviewer.utilities.NetworkConnection;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -88,6 +89,7 @@ public class DetailsFragment extends Fragment {
     private RecyclerView.LayoutManager trailerLayoutManager;
     private Bundle savedState;
     private InsertIntoDataBase insertIntoDataBase;
+    private Menu menu;
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -106,6 +108,7 @@ public class DetailsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        setRetainInstance(true);//// TODO: 11/5/2016 this 
         savedState = savedInstanceState;
         preferences = getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE);
         if(savedInstanceState == null){
@@ -123,6 +126,7 @@ public class DetailsFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        this.menu = menu;
         if(isFavourite)
             return;
         inflater.inflate(R.menu.details_menu, menu);
@@ -166,23 +170,9 @@ public class DetailsFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        if(currentState != originalState){
-            DataBaseInsertionData data = new DataBaseInsertionData();
-            data.setMovie(movie);
-            data.setReviews(reviews);
-            data.setTrailers(trailers);
-            data.setAdd(currentState);
-            insertIntoDataBase.insert(data);
-         /*   insertIntoDataBaseTask = new InsertIntoDataBaseTask();
-            insertIntoDataBaseTask.execute(currentState);*/
-            originalState = currentState;
-        }
+        if(currentState != originalState)
+            updateDatabase();
      //   Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
     }
 
     @Override
@@ -195,7 +185,8 @@ public class DetailsFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.details_fragment, container);
+        super.onCreateView(inflater, container, savedInstanceState);
+        View view = inflater.inflate(R.layout.details_fragment, container, false);
         this.view = view;
 
         //finding views
@@ -229,7 +220,7 @@ public class DetailsFragment extends Fragment {
         releaseDataText.setText(movie.getDate());
         titleText.setText(movie.getTitle());
         overviewText.setText(movie.getOverview());
-
+       // Picasso.with(getActivity()).load(movie.getUrl()).into(imageView);
         if(savedInstanceState != null){
             if(!isFavourite){
                 imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
@@ -267,7 +258,58 @@ public class DetailsFragment extends Fragment {
             }
         }
 
-        return super.onCreateView(inflater, container, savedInstanceState);
+        return view;
+    }
+
+    public void update(boolean isFavourite, Movie movie) {
+        this.movie = movie;
+        this.isFavourite = isFavourite;
+        if(isFavourite){
+            menu.getItem(0).setVisible(false);
+        }else{
+            if (preferences.getBoolean(movie.getId(), false)) {
+                menu.getItem(4).setIcon(R.mipmap.ic_favourite);
+                originalState = true;//available in db
+            }
+            else{
+                menu.getItem(4).setIcon(R.mipmap.ic_not_favourite);
+                originalState = false; // not in the database
+            }
+            currentState = originalState;
+        }
+        trailersRecyclerView.setAdapter(null);
+        reviewsRecyclerView.setAdapter(null);
+        reviewSeparator.setVisibility(View.INVISIBLE);
+        reviewHeader.setVisibility(View.INVISIBLE);
+        trailersHeader.setVisibility(View.INVISIBLE);
+        trailersSeparator.setVisibility(View.INVISIBLE);
+        titleText.setText(movie.getTitle());
+        releaseDataText.setText(movie.getDate());
+        overviewText.setText(movie.getOverview());
+        ratingBar.setRating((float) (movie.getRating() / 2));
+
+        if(isFavourite) {
+            localData = new ReflectLocalData();
+            localData.execute();
+        } else {
+            ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
+            reviewsAndTrailersTask.execute(movie.getId());
+        }
+        Picasso.with(getActivity()).load(movie.getUrl()).into(imageView);
+    }
+
+    public void updateDatabase() {
+        if(currentState == originalState)
+            return;
+        DataBaseInsertionData data = new DataBaseInsertionData();
+        data.setMovie(movie);
+        data.setReviews(reviews);
+        data.setTrailers(trailers);
+        data.setAdd(currentState);
+        insertIntoDataBase.insert(data);
+         /*   insertIntoDataBaseTask = new InsertIntoDataBaseTask();
+            insertIntoDataBaseTask.execute(currentState);*/
+        originalState = currentState;
     }
 
     class ReviewsAndTrailersTask extends AsyncTask<String, Void, Void> {
@@ -275,6 +317,7 @@ public class DetailsFragment extends Fragment {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+
             if (reviews.size() > 0) {
                 setReviews();
             }
@@ -336,52 +379,14 @@ public class DetailsFragment extends Fragment {
             return null;
         }
     }
-/*
-    class InsertIntoDataBaseTask extends AsyncTask<Boolean, Void, Void> {
-        @Override
-        protected Void doInBackground(Boolean... params) {
-            DataBaseHelper helper = new DataBaseHelper(activity);
-            if (params[0]) { //add
-                ContentValues values = new ContentValues();
-                values.put(MovieTable._ID, movie.getId());
-                values.put(MovieTable.COLUMN_IMAGE, movie.getImage());
-                values.put(MovieTable.COLUMN_DATE, movie.getDate());
-                values.put(MovieTable.COLUMN_IMAGE_URL, movie.getUrl());
-                values.put(MovieTable.COLUMN_OVERVIEW, movie.getOverview());
-                values.put(MovieTable.COLUMN_RATING, movie.getRating());
-                values.put(MovieTable.COLUMN_TITLE, movie.getTitle());
-                helper.getWritableDatabase().insert(MovieTable.TABLE_NAME, null, values);
 
-                for (int i = 0; i < trailers.size(); i++) {
-                    values = new ContentValues();
-                    values.put(TrailerTable.COLUMN_URL, trailers.get(i).getUrl());
-                    values.put(TrailerTable.COLUMN_REFERENCE, movie.getId());
-                    values.put(TrailerTable.COLUMN_NAME, trailers.get(i).getName());
-                    helper.getWritableDatabase().insert(TrailerTable.TABLE_NAME, null, values);
-                }
-
-                for (int i = 0; i < reviews.size(); i++) {
-                    values = new ContentValues();
-                    values.put(ReviewTable.COLUMN_AUTHOR, reviews.get(i).getAuthor());
-                    values.put(ReviewTable.COLUMN_COMMENT, reviews.get(i).getComment());
-                    values.put(ReviewTable.COLUMN_REFERENCE, movie.getId());
-                    helper.getWritableDatabase().insert(ReviewTable.TABLE_NAME, null, values);
-                }
-            } else {
-                helper.getWritableDatabase().delete(ReviewTable.TABLE_NAME, ReviewTable.COLUMN_REFERENCE + " =  ?", new String[]{movie.getId()});
-                helper.getWritableDatabase().delete(TrailerTable.TABLE_NAME, TrailerTable.COLUMN_REFERENCE + " =  ?", new String[]{movie.getId()});
-                helper.getWritableDatabase().delete(MovieTable.TABLE_NAME, MovieTable._ID + " =  ?", new String[]{movie.getId()});
-            }
-            helper.close();
-            return null;
-        }
-    }
-*/
     class DownloadImageTask extends AsyncTask<String, Void, Bitmap>{
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
+            if(activity == null)
+                return; //todo check this too
             byte[] byteImage = ImageConverter.bitmapTobyte(bitmap);
             movie.setImage(byteImage);
             if(bitmap != null)
@@ -472,6 +477,8 @@ public class DetailsFragment extends Fragment {
     }
 
     private void setTrailers() {
+        if(activity == null)
+            return;
         trailersHeader.setVisibility(View.VISIBLE);
         trailersSeparator.setVisibility(View.VISIBLE);
         trailersAdapter = new TrailersAdapter(trailers);
@@ -483,6 +490,7 @@ public class DetailsFragment extends Fragment {
     }
 
     private void setReviews() {
+        if(activity == null)
         reviewSeparator.setVisibility(View.VISIBLE);
         reviewHeader.setVisibility(View.VISIBLE);
         reviewsAdapter = new ReviewsAdapter(reviews);

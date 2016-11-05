@@ -62,14 +62,6 @@ public class MovieViewadapter extends ArrayAdapter<Movie> {
         } else {
             Picasso.with(context).load(movies.get(position).getUrl()).into(holder.getImageView());
         }
-
-        //    holder.getImageView().getLayoutParams().width = MainActivity.IMAGE_WIDTH;
-//        ImageView view = (ImageView) convertView.findViewById(R.id.image);
-//        view.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
-//        view.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
-
-        //// TODO: 10/5/16 test .resize(width, height), i think the picasso will be changed
-//        Picasso.with(context).load(movies[position].getUrl()).into(view);
         return convertView;
     }
 

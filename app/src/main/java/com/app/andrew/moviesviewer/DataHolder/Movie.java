@@ -12,7 +12,7 @@ import java.util.ArrayList;
  * Created by andrew on 10/5/16.
  */
 
-public class Movie implements /*Parcelable, */Serializable{
+public class Movie implements Serializable{
     private String url;
     private String title;
     private double rating;
@@ -71,14 +71,6 @@ public class Movie implements /*Parcelable, */Serializable{
         this.rating = rating;
     }
 
-    public Movie(Parcel parcel){
-        url = parcel.readString();
-        title = parcel.readString();
-        rating = parcel.readDouble();
-        date = parcel.readString();
-        overview = parcel.readString();
-    }
-
     public String getUrl() {
         return url;
     }
@@ -87,30 +79,4 @@ public class Movie implements /*Parcelable, */Serializable{
         this.url = url;
     }
 
-/*    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeString(url);
-        parcel.writeString(title);
-        parcel.writeDouble(rating);
-        parcel.writeString(date);
-        parcel.writeString(overview);
-    }
-
-    static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
-
-        @Override
-        public Movie createFromParcel(Parcel parcel) {
-            return new Movie(parcel);
-        }
-
-        @Override
-        public Movie[] newArray(int i) {
-            return new Movie[i];
-        }
-    };*/
 }

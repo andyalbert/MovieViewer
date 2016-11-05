@@ -73,6 +73,7 @@ public class MainFragment extends Fragment {
                     Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                     return false;
                 }
+                mainFragmentListener.clearDetailsFragment();
                 optionMenuState = 1;
                 loadData(getString(R.string.top_rated));
                 return true;
@@ -81,11 +82,13 @@ public class MainFragment extends Fragment {
                     Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                     return false;
                 }
+                mainFragmentListener.clearDetailsFragment();
                 optionMenuState = 2;
                 loadData(getString(R.string.popular));
                 return true;
             case R.id.item_favourite:
                 optionMenuState = 3;
+                mainFragmentListener.clearDetailsFragment();
                 localDataFetchingTask = new LocalDataFetchingTask();
                 localDataFetchingTask.execute();
                 if(!getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE).getBoolean("isEmpty", false)){
@@ -95,8 +98,10 @@ public class MainFragment extends Fragment {
                 return true;
             case R.id.item_clear_all:
                 mainFragmentListener.removeAllFromDataBase();
-                gridView.setAdapter(null);//// TODO: 11/2/2016 check this
+                gridView.setAdapter(null);
+                movies = new ArrayList<>();
                 item.setVisible(false);
+                mainFragmentListener.clearDetailsFragment();
                 return true;
             default:
                 return false;
@@ -134,6 +139,7 @@ public class MainFragment extends Fragment {
         super.onCreate(savedInstanceState);
         clearEnabled = false;
         setHasOptionsMenu(true);
+        setRetainInstance(true);//// TODO: 11/5/2016 check 
     }
 
     @Override
@@ -177,14 +183,14 @@ public class MainFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
-    @Override
+ /*   @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         //super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == Activity.RESULT_OK/* && optionMenuState == 3*/) {
+        if (requestCode == 1 && resultCode == Activity.RESULT_OK/* && optionMenuState == 3) {
             localDataFetchingTask = new LocalDataFetchingTask();
             localDataFetchingTask.execute();
         }
-    }
+    }*/
 
     @Nullable
     @Override
@@ -286,10 +292,10 @@ public class MainFragment extends Fragment {
                 movie = new Movie();
                 movie.setDate(cursor.getString(4));
                 movie.setId(cursor.getString(0));
-                movie.setImage(cursor.getBlob(6));
                 movie.setOverview(cursor.getString(5));
                 movie.setRating(cursor.getDouble(3));
                 movie.setTitle(cursor.getString(1));
+                movie.setImage(cursor.getBlob(6));
                 movie.setUrl(null);
                 movies.add(movie);
             }
@@ -300,11 +306,9 @@ public class MainFragment extends Fragment {
     }
 
     public interface MainFragmentListener {
-
         void loadLocalData(Movie movie, boolean b);
-
         void loadNetworkData(Movie movie);
-
         void removeAllFromDataBase();
+        void clearDetailsFragment();
     }
 }

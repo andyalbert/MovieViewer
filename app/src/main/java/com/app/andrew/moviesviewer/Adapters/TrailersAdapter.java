@@ -24,8 +24,6 @@ import java.util.ArrayList;
 
 public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.ViewHolder> {
     private ArrayList<Trailer> trailers;
-    private Activity activity;
-
     public TrailersAdapter(ArrayList<Trailer> trailers) {
         this.trailers = trailers;
     }
@@ -56,20 +54,6 @@ public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.ViewHo
             super(itemView);
             this.imageView = (ImageView)itemView.findViewById(R.id.trailer_image);
             this.textView = (TextView)itemView.findViewById(R.id.trailer_name);
-
-//            itemView.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    if(NetworkConnection.isConnected(activity)){
-//                        Intent intent = new Intent(Intent.ACTION_VIEW);
-//                        intent.setData(Uri.parse(getString(R.string.youtube_link) + trailers.get(position).getUrl()));
-////                        intent.setPackage("com.android.chrome");
-//                        startActivity(Intent.createChooser(intent, "Complete action using"));
-//                    } else
-//                        Snackbar.make(DetailsFragment.this.view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
-//
-//                }
-//            });
         }
     }
 }
