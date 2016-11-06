@@ -1,9 +1,5 @@
 package com.app.andrew.moviesviewer.Adapters;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,15 +8,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.app.andrew.moviesviewer.DataHolder.Trailer;
-import com.app.andrew.moviesviewer.DetailsFragment;
 import com.app.andrew.moviesviewer.R;
-import com.app.andrew.moviesviewer.utilities.NetworkConnection;
 
 import java.util.ArrayList;
 
-/**
- * Created by andrew on 10/23/16.
- */
 
 public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.ViewHolder> {
     private ArrayList<Trailer> trailers;

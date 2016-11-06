@@ -11,9 +11,6 @@ import com.app.andrew.moviesviewer.R;
 
 import java.util.ArrayList;
 
-/**
- * Created by andrew on 10/19/16.
- */
 
 public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewHolder> {
     private ArrayList<Review> reviews;

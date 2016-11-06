@@ -13,10 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
-/**
- * Created by andrew on 10/20/16.
- */
-
 @RunWith(AndroidJUnit4.class)
 public class DataBaseTest {
     Context appContext = InstrumentationRegistry.getTargetContext();

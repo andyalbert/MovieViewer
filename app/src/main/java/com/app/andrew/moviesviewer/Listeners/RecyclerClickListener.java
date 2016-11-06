@@ -5,13 +5,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.AdapterView;
-
-import com.app.andrew.moviesviewer.R;
-
-/**
- * Created by andrew on 10/24/16.
- */
 
 public class RecyclerClickListener implements RecyclerView.OnItemTouchListener {
     private OnItemClickListener listener;

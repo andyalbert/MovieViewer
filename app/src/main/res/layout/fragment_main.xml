@@ -11,5 +11,5 @@
         android:verticalSpacing="0dp"
         android:stretchMode="columnWidth"
 
-        android:id="@+id/movies_gridview"></GridView>
+        android:id="@+id/movies_gridview"/>
 </FrameLayout>

@@ -2,8 +2,10 @@ package com.app.andrew.moviesviewer;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -37,19 +39,21 @@ import com.app.andrew.moviesviewer.DataHolder.Movie;
 import com.app.andrew.moviesviewer.utilities.NetworkConnection;
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract.*;
 
-/**
- * Created by andrew on 10/5/16.
- */
 
 public class MainFragment extends Fragment {
     private GridView gridView;
     private MovieViewadapter movieViewadapter;
     private ArrayList<Movie> movies;
-    private DataFetshingTask fetshingTask;
     private View view;
     private int optionMenuState = 1;
     private LocalDataFetchingTask localDataFetchingTask;
-    private DataBaseHelper helper;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mainFragmentListener = (MainFragmentListener)activity;
+    }
+
     private MainFragmentListener mainFragmentListener;
     private Menu menu;
     private boolean clearEnabled;
@@ -65,14 +69,15 @@ public class MainFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        clearEnabled = false;
-        menu.getItem(3).setVisible(false);
+
         switch (item.getItemId()) {
             case R.id.item_top_rated:
                 if (!NetworkConnection.isConnected(getActivity())) {
                     Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                     return false;
                 }
+                clearEnabled = false;
+                menu.getItem(3).setVisible(false);
                 mainFragmentListener.clearDetailsFragment();
                 optionMenuState = 1;
                 loadData(getString(R.string.top_rated));
@@ -82,6 +87,8 @@ public class MainFragment extends Fragment {
                     Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
                     return false;
                 }
+                clearEnabled = false;
+                menu.getItem(3).setVisible(false);
                 mainFragmentListener.clearDetailsFragment();
                 optionMenuState = 2;
                 loadData(getString(R.string.popular));
@@ -89,12 +96,47 @@ public class MainFragment extends Fragment {
             case R.id.item_favourite:
                 optionMenuState = 3;
                 mainFragmentListener.clearDetailsFragment();
-                localDataFetchingTask = new LocalDataFetchingTask();
-                localDataFetchingTask.execute();
-                if(!getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE).getBoolean("isEmpty", false)){
-                    menu.getItem(3).setVisible(true);
-                    clearEnabled = true;
-                }
+                final ProgressDialog dialog = new ProgressDialog(getActivity());
+                dialog.setMessage("Retrieving your favourites...");
+                dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                dialog.setCancelable(false);
+                dialog.show();
+                new AsyncTask<Void, Void, Void>() {
+                    int currentOrientation = getActivity().getResources().getConfiguration().orientation;
+                    @Override
+                    protected void onPreExecute() {
+                        super.onPreExecute();
+                        if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                        }
+                        else {
+                            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+                        }
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        super.onPostExecute(aVoid);
+                        localDataFetchingTask = new LocalDataFetchingTask();
+                        localDataFetchingTask.execute();
+                        dialog.dismiss();
+                        if(!getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE).getBoolean("isEmpty", false)){
+                            menu.getItem(3).setVisible(true);
+                            clearEnabled = true;
+                        }
+                        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+
+                    }
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    }
+                }.execute();
                 return true;
             case R.id.item_clear_all:
                 mainFragmentListener.removeAllFromDataBase();
@@ -102,6 +144,8 @@ public class MainFragment extends Fragment {
                 movies = new ArrayList<>();
                 item.setVisible(false);
                 mainFragmentListener.clearDetailsFragment();
+                clearEnabled = false;
+                menu.getItem(3).setVisible(false);
                 return true;
             default:
                 return false;
@@ -139,7 +183,6 @@ public class MainFragment extends Fragment {
         super.onCreate(savedInstanceState);
         clearEnabled = false;
         setHasOptionsMenu(true);
-        setRetainInstance(true);//// TODO: 11/5/2016 check 
     }
 
     @Override
@@ -154,22 +197,11 @@ public class MainFragment extends Fragment {
             gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    if (optionMenuState == 3) {
+                    if (optionMenuState == 3)
                         mainFragmentListener.loadLocalData(movies.get(i), true);
-                      /*  Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                        intent.putExtra(getString(R.string.movie_data), movies.get(i));
-                        intent.putExtra(getString(R.string.is_favourite_key), true);
-                        startActivityForResult(intent, 1);*/
-                    } else {
+                    else
                         mainFragmentListener.loadNetworkData(movies.get(i));
-                       /* if (!NetworkConnection.isConnected(getActivity())) {
-                            Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
-                            return;
-                        }
-                        Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                        intent.putExtra(getString(R.string.movie_data), movies.get(i));
-                        startActivity(intent);*/
-                    }
+
                 }
             });
         }
@@ -183,21 +215,11 @@ public class MainFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
- /*   @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        //super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == Activity.RESULT_OK/* && optionMenuState == 3) {
-            localDataFetchingTask = new LocalDataFetchingTask();
-            localDataFetchingTask.execute();
-        }
-    }*/
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_main, container);
         gridView = (GridView) view.findViewById(R.id.movies_gridview);
-        //   Toast.makeText(getActivity(), "view", Toast.LENGTH_SHORT).show();
         if (savedInstanceState == null)
             loadData(getString(R.string.top_rated));
 
@@ -205,7 +227,7 @@ public class MainFragment extends Fragment {
     }
 
     private void loadData(String source) {
-        fetshingTask = new DataFetshingTask();
+        DataFetshingTask fetshingTask = new DataFetshingTask();
         fetshingTask.execute(source, getString(R.string.movie_db_key));
     }
 
@@ -218,13 +240,6 @@ public class MainFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                     mainFragmentListener.loadNetworkData(movies.get(i));
-                  /*  if (!NetworkConnection.isConnected(getActivity())) {
-                        Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                    intent.putExtra(getString(R.string.movie_data), movies.get(i));
-                    startActivity(intent);*/
                 }
             });
         }
@@ -274,17 +289,13 @@ public class MainFragment extends Fragment {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     mainFragmentListener.loadLocalData(movies.get(position), true);
-                  /*  Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                    intent.putExtra(getString(R.string.movie_data), movies.get(position));
-                    intent.putExtra(getString(R.string.is_favourite_key), true);
-                    startActivityForResult(intent, 1);*/
                 }
             });
         }
 
         @Override
         protected Void doInBackground(Void... params) {
-            helper = new DataBaseHelper(getActivity());
+            DataBaseHelper helper = new DataBaseHelper(getActivity());
             Cursor cursor = helper.getReadableDatabase().query(MovieTable.TABLE_NAME, null, null, null, null, null, null);
             movies = new ArrayList<>();
             Movie movie;
@@ -300,7 +311,7 @@ public class MainFragment extends Fragment {
                 movies.add(movie);
             }
             movieViewadapter = new MovieViewadapter(getActivity(), R.id.movies_gridview, movies);
-
+            cursor.close();
             return null;
         }
     }

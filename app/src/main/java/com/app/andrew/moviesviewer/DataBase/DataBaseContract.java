@@ -2,10 +2,6 @@ package com.app.andrew.moviesviewer.DataBase;
 
 import android.provider.BaseColumns;
 
-/**
- * Created by andrew on 10/19/16.
- */
-
 public class DataBaseContract {
 
     public static final class MovieTable implements BaseColumns{

@@ -2,7 +2,6 @@ package com.app.andrew.moviesviewer;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,8 +11,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
@@ -27,7 +24,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.app.andrew.moviesviewer.DataHolder.DataBaseInsertionData;
 import com.app.andrew.moviesviewer.Listeners.RecyclerClickListener;
@@ -40,7 +36,6 @@ import com.app.andrew.moviesviewer.DataHolder.Review;
 import com.app.andrew.moviesviewer.DataHolder.Trailer;
 import com.app.andrew.moviesviewer.utilities.ImageConverter;
 import com.app.andrew.moviesviewer.utilities.NetworkConnection;
-import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -55,9 +50,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-/**
- * Created by andrew on 10/5/16.
- */
 
 public class DetailsFragment extends Fragment {
     private Movie movie;
@@ -67,16 +59,13 @@ public class DetailsFragment extends Fragment {
     private RatingBar ratingBar;
     private ImageView imageView;
     private RecyclerView reviewsRecyclerView;
-    private ReviewsAdapter reviewsAdapter;
     private ArrayList<Review> reviews;
     private ArrayList<Trailer> trailers;
     private RecyclerView trailersRecyclerView;
-    private TrailersAdapter trailersAdapter;
     private TextView reviewHeader;
     private View reviewSeparator;
     private TextView trailersHeader;
     private View trailersSeparator;
- //   private InsertIntoDataBaseTask insertIntoDataBaseTask;
     private boolean currentState;
     private boolean originalState; // used to detect whether to change the db state or not
     private SharedPreferences preferences;
@@ -85,8 +74,6 @@ public class DetailsFragment extends Fragment {
     private boolean isFavourite;
     private ReflectLocalData localData;
     private View view;
-    private RecyclerView.LayoutManager reviewLayoutManager;
-    private RecyclerView.LayoutManager trailerLayoutManager;
     private Bundle savedState;
     private InsertIntoDataBase insertIntoDataBase;
     private Menu menu;
@@ -108,7 +95,6 @@ public class DetailsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        setRetainInstance(true);//// TODO: 11/5/2016 this 
         savedState = savedInstanceState;
         preferences = getActivity().getSharedPreferences(getString(R.string.movie_viewer_pref), Context.MODE_PRIVATE);
         if(savedInstanceState == null){
@@ -172,7 +158,6 @@ public class DetailsFragment extends Fragment {
         super.onStop();
         if(currentState != originalState)
             updateDatabase();
-     //   Toast.makeText(activity, "stop", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -197,19 +182,10 @@ public class DetailsFragment extends Fragment {
         ratingBar = (RatingBar) view.findViewById(R.id.movie_rating);
         reviewsRecyclerView = (RecyclerView) view.findViewById(R.id.reviews_recycler_view);
         trailersRecyclerView = (RecyclerView) view.findViewById(R.id.trailers_recycler_view);
-        reviewLayoutManager  = new LinearLayoutManager(getActivity());
-        trailerLayoutManager = new LinearLayoutManager(getActivity());
+        RecyclerView.LayoutManager reviewLayoutManager = new LinearLayoutManager(getActivity());
+        RecyclerView.LayoutManager trailerLayoutManager = new LinearLayoutManager(getActivity());
         reviewsRecyclerView.setLayoutManager(reviewLayoutManager);
         trailersRecyclerView.setLayoutManager(trailerLayoutManager);
-//        if(savedInstanceState != null){
-//            reviewsRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("reviewstate"));
-//            trailersRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("trailerstate"));
-//
-//        } else {
-//
-//        }
-
-        //       reviewsRecyclerView.setItemAnimator(new DefaultItemAnimator());
         reviewSeparator = view.findViewById(R.id.reviews_separator);
         reviewHeader = (TextView) view.findViewById(R.id.review_header);
         trailersHeader = (TextView) view.findViewById(R.id.trailers_header);
@@ -220,7 +196,6 @@ public class DetailsFragment extends Fragment {
         releaseDataText.setText(movie.getDate());
         titleText.setText(movie.getTitle());
         overviewText.setText(movie.getOverview());
-       // Picasso.with(getActivity()).load(movie.getUrl()).into(imageView);
         if(savedInstanceState != null){
             if(!isFavourite){
                 imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
@@ -248,9 +223,6 @@ public class DetailsFragment extends Fragment {
 
                 ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
                 reviewsAndTrailersTask.execute(movie.getId());
-                //imageView.getLayoutParams().height = MainActivity.IMAGE_HEIGHT;
-                //imageView.getLayoutParams().width = MainActivity.IMAGE_WIDTH;
-                //Picasso.with(getActivity()).load(movie.getUrl()).into(imageView); //todo is this right ? i replaced it with imagemap
             } else {
                 imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
                 localData = new ReflectLocalData();
@@ -264,9 +236,7 @@ public class DetailsFragment extends Fragment {
     public void update(boolean isFavourite, Movie movie) {
         this.movie = movie;
         this.isFavourite = isFavourite;
-        if(isFavourite){
-            menu.getItem(0).setVisible(false);
-        }else{
+        if(!isFavourite ){
             if (preferences.getBoolean(movie.getId(), false)) {
                 menu.getItem(4).setIcon(R.mipmap.ic_favourite);
                 originalState = true;//available in db
@@ -291,11 +261,13 @@ public class DetailsFragment extends Fragment {
         if(isFavourite) {
             localData = new ReflectLocalData();
             localData.execute();
+            imageView.setImageBitmap(ImageConverter.bytetoBitmap(movie.getImage()));
         } else {
             ReviewsAndTrailersTask reviewsAndTrailersTask = new ReviewsAndTrailersTask();
             reviewsAndTrailersTask.execute(movie.getId());
+            downloadImageTask = new DownloadImageTask();
+            downloadImageTask.execute(movie.getUrl());
         }
-        Picasso.with(getActivity()).load(movie.getUrl()).into(imageView);
     }
 
     public void updateDatabase() {
@@ -307,8 +279,6 @@ public class DetailsFragment extends Fragment {
         data.setTrailers(trailers);
         data.setAdd(currentState);
         insertIntoDataBase.insert(data);
-         /*   insertIntoDataBaseTask = new InsertIntoDataBaseTask();
-            insertIntoDataBaseTask.execute(currentState);*/
         originalState = currentState;
     }
 
@@ -333,6 +303,8 @@ public class DetailsFragment extends Fragment {
                 return null;
             reviews = new ArrayList<>();
             trailers = new ArrayList<>();
+            if(activity == null || !isAdded())
+                return null;
             try {
                 URL url = new URL("https://api.themoviedb.org/3/movie/" + args[0] + "/videos?api_key=" + getString(R.string.movie_db_key) + "&language=en-US ");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -385,17 +357,18 @@ public class DetailsFragment extends Fragment {
         @Override
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
-            if(activity == null)
+            if(activity == null || bitmap == null)
                 return; //todo check this too
             byte[] byteImage = ImageConverter.bitmapTobyte(bitmap);
             movie.setImage(byteImage);
-            if(bitmap != null)
-                imageView.setImageBitmap(bitmap);
+            imageView.setImageBitmap(bitmap);
         }
 
         @Override
         protected Bitmap doInBackground(String... params) {
             Bitmap bitmap = null;
+            if(activity == null || !isAdded())
+                return null;
             try {
                 URL imageUrl = new URL(params[0]);
                 InputStream in = imageUrl.openStream();
@@ -444,7 +417,7 @@ public class DetailsFragment extends Fragment {
             }
             publishProgress();
             cursor.close();
-            //retrieve traiers
+            //retrieve trailers
              cursor = helper.getReadableDatabase().query(TrailerTable.TABLE_NAME, null, TrailerTable.COLUMN_REFERENCE + " = ?", new String[]{movie.getId()}, null, null, null);
             trailers = new ArrayList<>();
             Trailer trailer;
@@ -460,16 +433,14 @@ public class DetailsFragment extends Fragment {
     }
 
     private void startTrailerItemsClickListener() {
-        //// TODO: 10/23/16 remove this shit
         trailersRecyclerView.addOnItemTouchListener(new RecyclerClickListener(getActivity(), new RecyclerClickListener.OnItemClickListener() {
             @Override
             public void onClick(View view, int position) {
                 if(NetworkConnection.isConnected(activity)){
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setData(Uri.parse(getString(R.string.youtube_link) + trailers.get(position).getUrl()));
-//                        intent.setPackage("com.android.chrome");
                     startActivity(Intent.createChooser(intent, "Complete action using"));
-                } else //// TODO: 11/2/2016 test this on tablet
+                } else
                     Snackbar.make(DetailsFragment.this.view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
 
             }
@@ -481,7 +452,7 @@ public class DetailsFragment extends Fragment {
             return;
         trailersHeader.setVisibility(View.VISIBLE);
         trailersSeparator.setVisibility(View.VISIBLE);
-        trailersAdapter = new TrailersAdapter(trailers);
+        TrailersAdapter trailersAdapter = new TrailersAdapter(trailers);
         trailersRecyclerView.setAdapter(trailersAdapter);
         if(savedState != null)
             trailersRecyclerView.getLayoutManager().onRestoreInstanceState(savedState.getParcelable("trailerstate"));
@@ -493,7 +464,7 @@ public class DetailsFragment extends Fragment {
         if(activity == null)
         reviewSeparator.setVisibility(View.VISIBLE);
         reviewHeader.setVisibility(View.VISIBLE);
-        reviewsAdapter = new ReviewsAdapter(reviews);
+        ReviewsAdapter reviewsAdapter = new ReviewsAdapter(reviews);
         reviewsRecyclerView.setAdapter(reviewsAdapter);
         if(savedState != null)
             reviewsRecyclerView.getLayoutManager().onRestoreInstanceState(savedState.getParcelable("reviewstate"));

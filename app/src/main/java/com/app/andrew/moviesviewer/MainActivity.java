@@ -1,23 +1,20 @@
 package com.app.andrew.moviesviewer;
 
-import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Display;
 import android.view.View;
-import android.widget.ProgressBar;
 
 import com.app.andrew.moviesviewer.DataBase.DataBaseHelper;
+import com.app.andrew.moviesviewer.DataBase.InsertIntoDataBaseTask;
 import com.app.andrew.moviesviewer.DataHolder.DataBaseInsertionData;
 import com.app.andrew.moviesviewer.DataHolder.Movie;
-import com.app.andrew.moviesviewer.DataHolder.Trailer;
 import com.app.andrew.moviesviewer.utilities.NetworkConnection;
 
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract.*;
@@ -27,7 +24,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
     public static int IMAGE_HEIGHT;
     private boolean twoPanes;
     private View view;
-    private InsertIntoDataBaseTask dataBaseTask;
     private DetailsFragment detailsFragment;
     private Bundle detailsFragmentBundle;
 
@@ -57,24 +53,10 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
             return;
         setImageDimentions();
         getFragmentManager().beginTransaction().replace(R.id.main_view, new MainFragment()).commit();
-        if(findViewById(R.id.secondary_view) == null){
+        if(findViewById(R.id.secondary_view) == null)
             twoPanes = false;
-
-        }else{
+        else
             twoPanes = true;
-//            emptyFragment = new EmptyFragment();
-//            getFragmentManager().beginTransaction().replace(R.id.secondary_view, emptyFragment).commit();
-        //    detailsFragment = new DetailsFragment();
-          //  getFragmentManager().beginTransaction().replace(R.id.secondary_view, new MainFragment()).commit();
-            //todo check this
-
-        }
-/*
-        if(savedInstanceState == null){
-            getFragmentManager().beginTransaction().replace(R.id.activity_main, new MainFragment()).commit();
-            setImageDimentions();
-        }
-*/
     }
 
     public void setImageDimentions(){
@@ -91,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
 
     @Override
     public void insert(DataBaseInsertionData data) {
-        dataBaseTask = new InsertIntoDataBaseTask();
+        InsertIntoDataBaseTask dataBaseTask = new InsertIntoDataBaseTask();
         data.setActivity(MainActivity.this);
         dataBaseTask.execute(data);
     }
@@ -99,14 +81,12 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
     @Override
     public void loadLocalData(Movie movie, boolean b) {
         if(twoPanes){
-            //// TODO: 11/2/2016 fill here
             if(detailsFragment == null){
                 detailsFragment = new DetailsFragment();
                 detailsFragmentBundle = new Bundle();
                 detailsFragmentBundle.putBoolean("favourite", true);
                 detailsFragmentBundle.putSerializable(getString(R.string.movie_data), movie);
                 detailsFragment.setArguments(detailsFragmentBundle);
-                //       getFragmentManager().beginTransaction().r
                 getFragmentManager().beginTransaction().replace(R.id.secondary_view, detailsFragment).commit();
             } else {
                 detailsFragment.updateDatabase();
@@ -127,7 +107,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
             return;
         }
         if(twoPanes) {
-            //// TODO: 11/2/2016 fill here
             if(detailsFragment == null){
                 detailsFragment = new DetailsFragment();
                 detailsFragmentBundle = new Bundle();
@@ -141,10 +120,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
             }
 
         }else{
-          /*  if (!NetworkConnection.isConnected(this)) {
-                Snackbar.make(view, getString(R.string.no_internet_message), Snackbar.LENGTH_SHORT).show();
-                return;
-            }*/
             Intent intent = new Intent(this, DetailsActivity.class);
             intent.putExtra(getString(R.string.movie_data), movie);
             startActivity(intent);
@@ -166,9 +141,6 @@ public class MainActivity extends AppCompatActivity implements MainFragment.Main
             detailsFragment.updateDatabase();
             getFragmentManager().beginTransaction().remove(detailsFragment).commit();
             detailsFragment = null;
-            ProgressBar bar = new ProgressBar(this);
-           // new Handler(new )
-
         }
     }
 

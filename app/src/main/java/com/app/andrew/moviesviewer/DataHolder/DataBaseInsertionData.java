@@ -4,9 +4,6 @@ import android.app.Activity;
 
 import java.util.ArrayList;
 
-/**
- * Created by Andrew on 11/2/2016.
- */
 
 public class DataBaseInsertionData {
     private Movie movie;

@@ -1,4 +1,4 @@
-package com.app.andrew.moviesviewer;
+package com.app.andrew.moviesviewer.DataBase;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -10,12 +10,10 @@ import com.app.andrew.moviesviewer.DataHolder.DataBaseInsertionData;
 import com.app.andrew.moviesviewer.DataHolder.Movie;
 import com.app.andrew.moviesviewer.DataHolder.Review;
 import com.app.andrew.moviesviewer.DataHolder.Trailer;
+import com.app.andrew.moviesviewer.R;
 
 import java.util.ArrayList;
 
-/**
- * Created by Andrew on 11/2/2016.
- */
 
 public class InsertIntoDataBaseTask extends AsyncTask<DataBaseInsertionData, Void, Void> {
     @Override

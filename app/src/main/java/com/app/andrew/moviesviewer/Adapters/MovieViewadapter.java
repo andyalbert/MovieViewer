@@ -18,10 +18,6 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
-/**
- * Created by andrew on 10/5/16.
- */
-
 public class MovieViewadapter extends ArrayAdapter<Movie> {
     private Context context;
     private ArrayList<Movie> movies;

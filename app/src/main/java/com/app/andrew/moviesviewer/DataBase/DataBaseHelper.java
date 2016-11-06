@@ -8,9 +8,6 @@ import com.app.andrew.moviesviewer.DataBase.DataBaseContract.MovieTable;
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract.ReviewTable;
 import com.app.andrew.moviesviewer.DataBase.DataBaseContract.TrailerTable;
 
-/**
- * Created by andrew on 10/19/16.
- */
 
 public class DataBaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "movieapp.db";

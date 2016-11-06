@@ -2,9 +2,6 @@ package com.app.andrew.moviesviewer.DataHolder;
 
 import java.io.Serializable;
 
-/**
- * Created by Andrew on 10/20/2016.
- */
 
 public class Trailer implements Serializable {
     private String url;

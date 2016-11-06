@@ -1,16 +1,7 @@
 package com.app.andrew.moviesviewer.DataHolder;
 
-import android.app.ApplicationErrorReport;
-import android.graphics.Bitmap;
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import java.io.Serializable;
-import java.util.ArrayList;
 
-/**
- * Created by andrew on 10/5/16.
- */
 
 public class Movie implements Serializable{
     private String url;

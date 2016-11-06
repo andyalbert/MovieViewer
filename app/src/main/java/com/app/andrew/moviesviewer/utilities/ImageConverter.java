@@ -5,10 +5,6 @@ import android.graphics.BitmapFactory;
 
 import java.io.ByteArrayOutputStream;
 
-/**
- * Created by Andrew on 10/22/2016.
- */
-
 public class ImageConverter {
     public static byte[] bitmapTobyte(Bitmap bitmap){
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
